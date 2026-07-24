@@ -241,7 +241,8 @@ export const UPCOMING_EVENTS = [
 ];
 
 const NAV_LINKS = [
-  { label: "Home", href: "https://dms-pqry.vercel.app" },
+  { label: "Main Site", href: "https://dms-pqry.vercel.app" },
+  { label: "Home", href: "/" },
   { label: "About Us", href: "#about" },
   { label: "Our Initiatives", href: "#initiatives" },
   { label: "Gallery", href: "#gallery" },
@@ -322,7 +323,7 @@ function Reveal({ children, className = "", delay = 0 }) {
         el.scrollIntoView({ behavior: "smooth" });
         try {
           sessionStorage.removeItem("scrollTo");
-        } catch (err) {}
+        } catch (err) { }
       } else {
         // retry briefly until element mounts
         setTimeout(scrollToContact, 100);
@@ -336,9 +337,8 @@ function Reveal({ children, className = "", delay = 0 }) {
     <div
       ref={ref}
       style={{ transitionDelay: `${delay}ms` }}
-      className={`transition-all duration-700 ease-out ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      } ${className}`}
+      className={`transition-all duration-700 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        } ${className}`}
     >
       {children}
     </div>
@@ -1079,21 +1079,19 @@ export default function Homepage() {
     <div className="font-body text-charcoal bg-cream overflow-x-hidden">
       {/* ============================ NAVBAR ============================ */}
       <header
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-          scrolled
+        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled
             ? "bg-[#FFF8F0]/95 backdrop-blur-md shadow-lg py-2"
             : "bg-black/10 backdrop-blur-sm py-2"
-        }`}
+          }`}
       >
         <div className="max-w-7xl mx-auto px-5 md:px-8 flex items-center justify-between">
           {/* Logo */}
-          <a href="https://dms-pqry.vercel.app" className="z-50 flex items-center">
+          <a href="/" className="z-50 flex items-center">
             <img
               src={logo}
               alt="DMS Aarohi"
-              className={`object-contain transition-all duration-300 ${
-                scrolled ? "h-8 md:h-10" : "h-10 md:h-12"
-              }`}
+              className={`object-contain transition-all duration-300 ${scrolled ? "h-8 md:h-10" : "h-10 md:h-12"
+                }`}
             />
           </a>
           {/* Desktop nav */}
@@ -1136,9 +1134,8 @@ export default function Homepage() {
 
         {/* Mobile nav drawer */}
         <div
-          className={`lg:hidden fixed top-0 right-0 h-screen w-72 bg-cream shadow-2xl transition-transform duration-300 ease-in-out ${
-            menuOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+          className={`lg:hidden fixed top-0 right-0 h-screen w-72 bg-cream shadow-2xl transition-transform duration-300 ease-in-out ${menuOpen ? "translate-x-0" : "translate-x-full"
+            }`}
         >
           <div className="flex flex-col gap-1 pt-28 px-8">
             {NAV_LINKS.map((link) => (
@@ -1176,16 +1173,14 @@ export default function Homepage() {
         {HERO_SLIDES.map((slide, i) => (
           <div
             key={i}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              i === activeSlide ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${i === activeSlide ? "opacity-100" : "opacity-0"
+              }`}
           >
             <img
               src={slide.image}
               alt={slide.title}
-              className={`w-full h-full object-cover ${
-                i === activeSlide ? "animate-slow-zoom" : ""
-              }`}
+              className={`w-full h-full object-cover ${i === activeSlide ? "animate-slow-zoom" : ""
+                }`}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/40 to-charcoal/10" />
           </div>
@@ -1244,9 +1239,8 @@ export default function Homepage() {
                 key={i}
                 onClick={() => setActiveSlide(i)}
                 aria-label={`Go to slide ${i + 1}`}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  i === activeSlide ? "w-8 bg-coral" : "w-2 bg-cream/50"
-                }`}
+                className={`h-2 rounded-full transition-all duration-300 ${i === activeSlide ? "w-8 bg-coral" : "w-2 bg-cream/50"
+                  }`}
               />
             ))}
           </div>
@@ -1538,9 +1532,8 @@ export default function Homepage() {
               <Reveal
                 key={src}
                 delay={i * 60}
-                className={`${
-                  i === 0 ? "col-span-2 row-span-2" : ""
-                } ${i === 5 ? "md:row-span-2" : ""}`}
+                className={`${i === 0 ? "col-span-2 row-span-2" : ""
+                  } ${i === 5 ? "md:row-span-2" : ""}`}
               >
                 <div className="relative h-full w-full rounded-2xl overflow-hidden group">
                   <img
