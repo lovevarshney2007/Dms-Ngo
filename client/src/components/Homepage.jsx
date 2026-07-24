@@ -150,20 +150,7 @@ const HOW_WE_WORK = [
   },
 ];
 
-const GALLERY_IMAGES = [
-  img1,
-  img2,
-  img3,
-  img4,
-  img5,
-  img6,
-  img7,
-  img8,
-  img9,
-  img10,
-  img11,
-  img12,
-];
+
 
 // Impact stats — animated counters
 const STATS = [
@@ -217,28 +204,7 @@ const TEAM = [
   },
 ];
 
-export const UPCOMING_EVENTS = [
-  {
-    title: "Cloth Distribution Drive",
-    date: "August 2026",
-    location: "Greater Noida West — Near Char Murti",
-    desc: "Join us as we collect and distribute clothes to underprivileged families. Every garment donated brings warmth, dignity and hope to someone in need.",
-    image: eventClothImg,
-    tag: "Distribution Drive",
-    tagColor: "bg-gold",
-    icon: "👕",
-  },
-  {
-    title: "Blood Donation Camp",
-    date: "September 2026",
-    location: "Surya Nagar, Ghaziabad",
-    desc: "Join us in saving lives through voluntary blood donation. Your contribution can provide timely support to patients in critical need and bring hope during medical emergencies.",
-    image: eventBloodImg,
-    tag: "Health Camp",
-    tagColor: "bg-coral",
-    icon: "🩸",
-  },
-];
+
 
 const NAV_LINKS = [
   { label: "Main Site", href: "https://dms-pqry.vercel.app" },
@@ -367,6 +333,27 @@ function WaveDivider({ flip = false, color = "#FBF7F0" }) {
 // ─── Upcoming Events Section (IMPROVED — big image cards) ────────────────────
 
 export function UpcomingEvents() {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const url = import.meta.env.VITE_API_URL || 'http://localhost:5051';
+        const res = await fetch(`${url}/api/content/ngo-camp`);
+        const data = await res.json();
+        setEvents(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to fetch events:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
+
+  const resolveImg = (url) => url ? url : 'https://placehold.co/600x400?text=Event';
+
   return (
     <section className="bg-cream py-16 md:py-18">
       <div className="max-w-6xl mx-auto px-5 md:px-8">
@@ -385,62 +372,71 @@ export function UpcomingEvents() {
 
         <div className="bg-[#F3EEE7] border border-[#E7DED4] rounded-[32px] p-6 md:p-8 shadow-sm">
           <div className="grid md:grid-cols-2 gap-8">
-            {UPCOMING_EVENTS.map((event, i) => (
-              <Reveal key={event.title} delay={i * 150}>
-                <div className="group relative rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 bg-white">
+            {loading ? (
+              <div className="col-span-full text-center py-10 text-charcoal/60 font-semibold">Loading upcoming events...</div>
+            ) : events.length === 0 ? (
+              <div className="col-span-full text-center py-10 text-charcoal/60 font-semibold">No upcoming events at the moment. Please check back later.</div>
+            ) : events.map((event, i) => (
+              <Reveal key={event._id || i} delay={i * 150}>
+                <div className="group relative rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 bg-white flex flex-col h-full">
                   {/* Image */}
-                  <div className="relative h-48 md:h-60 overflow-hidden">
+                  <div className="relative h-48 md:h-60 overflow-hidden shrink-0">
                     <img
-                      src={event.image}
+                      src={resolveImg(event.imageUrl)}
                       alt={event.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      onError={(e) => { e.target.src = 'https://placehold.co/600x400?text=Event'; }}
                     />
                     {/* Dark gradient overlay on image */}
                     <div className="absolute inset-0 bg-gradient-to-t from-charcoal/70 via-charcoal/20 to-transparent" />
 
                     {/* Tag badge on image */}
-                    <div className="absolute top-4 left-4">
-                      <span
-                        className={`${event.tagColor} text-cream text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-md`}
-                      >
-                        {event.tag}
-                      </span>
-                    </div>
+                    {event.link && (
+                      <div className="absolute top-4 left-4">
+                        <span className="bg-coral text-cream text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-md">
+                          {event.link}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Emoji on image bottom-right */}
                     <div className="absolute bottom-4 right-4 w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl border border-white/30">
-                      {event.icon}
+                      📅
                     </div>
                   </div>
 
                   {/* Content */}
-                  <div className="p-4 md:p-6">
+                  <div className="p-4 md:p-6 flex flex-col flex-grow">
                     <h3 className="font-display font-bold text-xl md:text-2xl text-charcoal mb-3 group-hover:text-teal transition-colors duration-300">
                       {event.title}
                     </h3>
 
                     <div className="flex flex-wrap gap-4 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-charcoal/65">
-                        <div className="w-7 h-7 rounded-lg bg-coral/10 flex items-center justify-center">
-                          <Calendar className="w-4 h-4 text-coral" />
+                      {event.year && (
+                        <div className="flex items-center gap-2 text-sm text-charcoal/65">
+                          <div className="w-7 h-7 rounded-lg bg-coral/10 flex items-center justify-center">
+                            <Calendar className="w-4 h-4 text-coral" />
+                          </div>
+                          <span className="font-medium">{event.year}</span>
                         </div>
-                        <span className="font-medium">{event.date}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-charcoal/65">
-                        <div className="w-7 h-7 rounded-lg bg-teal/10 flex items-center justify-center">
-                          <MapPin className="w-4 h-4 text-teal" />
+                      )}
+                      {event.subtitle && (
+                        <div className="flex items-center gap-2 text-sm text-charcoal/65">
+                          <div className="w-7 h-7 rounded-lg bg-teal/10 flex items-center justify-center">
+                            <MapPin className="w-4 h-4 text-teal" />
+                          </div>
+                          <span className="font-medium">{event.subtitle}</span>
                         </div>
-                        <span className="font-medium">{event.location}</span>
-                      </div>
+                      )}
                     </div>
 
-                    <p className="text-charcoal/65 text-sm leading-relaxed mb-6">
-                      {event.desc}
+                    <p className="text-charcoal/65 text-sm leading-relaxed mb-6 flex-grow">
+                      {event.description}
                     </p>
 
                     <a
                       href="/#contact"
-                      className="inline-flex items-center gap-2 text-sm font-bold text-teal hover:text-coral transition-colors group/link"
+                      className="inline-flex items-center gap-2 text-sm font-bold text-teal hover:text-coral transition-colors group/link mt-auto"
                     >
                       Register Your Interest
                       <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
@@ -453,23 +449,6 @@ export function UpcomingEvents() {
               </Reveal>
             ))}
           </div>
-
-          {/* CTA below events */}
-          {/* <Reveal delay={300} className="mt-12 text-center">
-          <div className="inline-flex items-center gap-3 bg-teal/5 border border-teal/20 rounded-2xl px-8 py-5">
-            <Star className="w-5 h-5 text-gold flex-shrink-0" />
-            <p className="text-charcoal/75 text-sm md:text-base">
-              Want to stay updated on all our events?
-            </p>
-            <a
-              href="/#contact"
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-teal text-cream font-semibold text-sm shadow-md hover:scale-105 active:scale-95 transition-all duration-200 flex-shrink-0"
-            >
-              Stay Connected
-              <ArrowRight className="w-3.5 h-3.5" />
-            </a>
-          </div>
-        </Reveal> */}
         </div>
       </div>
     </section>
@@ -1045,6 +1024,24 @@ export default function Homepage() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const [volunteerOpen, setVolunteerOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState([]);
+
+  // Fetch Gallery Images dynamically
+  useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        const url = import.meta.env.VITE_API_URL || 'http://localhost:5051';
+        const res = await fetch(`${url}/api/content/ngo-gallery`);
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setGalleryImages(data.map(item => item.imageUrl || '').filter(Boolean));
+        }
+      } catch (err) {
+        console.error("Failed to fetch gallery:", err);
+      }
+    };
+    fetchGallery();
+  }, []);
 
   // Hash listener for opening volunteer modal automatically
   useEffect(() => {
@@ -1528,7 +1525,7 @@ export default function Homepage() {
           </Reveal>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5 auto-rows-[160px] md:auto-rows-[200px]">
-            {GALLERY_IMAGES.map((src, i) => (
+            {galleryImages.map((src, i) => (
               <Reveal
                 key={src}
                 delay={i * 60}
