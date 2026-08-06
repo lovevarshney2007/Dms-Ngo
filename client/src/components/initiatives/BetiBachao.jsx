@@ -1,33 +1,34 @@
 /**
  * BetiBachao.jsx
  * Route: /initiatives/beti-bachao
- *
- * Replace heroImg2/3/4 and gallery with dedicated Beti Bachao event photos
- * when available.
  */
 
 import { ShieldCheck, Heart, Users, Megaphone, GraduationCap, Sparkles, Handshake } from "lucide-react";
 import { InitiativePage } from "./shared";
+import { useGallery, useInitiativeContent } from "../../hooks/useSiteData";
+import { useHeroSlides } from "../../hooks/useSiteData";
 
 import heroImg1 from "../../assets/beti-bachao/beti-2.jpg";
 import heroImg2 from "../../assets/beti-bachao/beti-15.jpg";
 import heroImg3 from "../../assets/beti-bachao/beti-3.jpg";
 import heroImg4 from "../../assets/beti-bachao/beti-8.JPG";
+import aboutImg from "../../assets/beti-bachao/beti-6.jpg";
 
-import g1 from "../../assets/beti-bachao/beti-15.jpg";
-import g2 from "../../assets/beti-bachao/beti-12.jpg";
-import g3 from "../../assets/beti-bachao/beti-5.jpg";
-import g4 from "../../assets/beti-bachao/beti-6.jpg";
-import g5 from "../../assets/beti-bachao/beti-7.jpg";
-import g6 from "../../assets/beti-bachao/beti-8.JPG";
-import g7 from "../../assets/beti-bachao/beti-10.jpg";
-import g8 from "../../assets/beti-bachao/beti-11.jpg";
-import g9 from "../../assets/beti-bachao/beti-9.JPG";
-import g10 from "../../assets/beti-bachao/beti-13.jpg";
-import g11 from "../../assets/beti-bachao/beti-14.jpg";
-import g12 from "../../assets/beti-bachao/beti-4.jpg";
+const SLUG = "beti-bachao";
 
-const HERO_SLIDES = [
+const DEFAULT_CONTENT = {
+  heroTitle: "Beti Bachao Initiative",
+  heroTagline: "Empowering Every Girl for a Better Tomorrow",
+  aboutText:
+    "Every girl deserves the opportunity to live, learn, and achieve her dreams. Through the Beti Bachao Initiative, DMS AAROHI promotes awareness about the importance of girl child education, safety, equality and empowerment.\nThrough awareness campaigns, educational support, and community outreach programs, DMS AAROHI strives to create an environment where girls are valued, respected, and given equal opportunities to succeed.\nBy supporting the dreams and aspirations of young girls, we aim to nurture confident, educated, and empowered individuals who can shape a better future for themselves and for society.\nWe work with communities to encourage positive social change and support girls in reaching their full potential.",
+  ctaTitle: "Support Girl Child Empowerment",
+  ctaBody:
+    "Join us in creating equal opportunities and brighter futures for every girl. Your participation strengthens communities and transforms lives.",
+  ctaButtonLabel: "Join the Initiative",
+  aboutImage: "",
+};
+
+const DEFAULT_HERO_SLIDES = [
   {
     image: heroImg1,
     title: "Beti Bachao Initiative",
@@ -50,12 +51,7 @@ const HERO_SLIDES = [
   },
 ];
 
-const ABOUT_TEXT = [
-  "Every girl deserves the opportunity to live, learn, and achieve her dreams. Through the Beti Bachao Initiative, DMS AAROHI promotes awareness about the importance of girl child education, safety, equality and empowerment.",
-  "Through awareness campaigns, educational support, and community outreach programs, DMS AAROHI strives to create an environment where girls are valued, respected, and given equal opportunities to succeed.",
-  "By supporting the dreams and aspirations of young girls, we aim to nurture confident, educated, and empowered individuals who can shape a better future for themselves and for society.",
-  "We work with communities to encourage positive social change and support girls in reaching their full potential.",
-];
+const DEFAULT_ABOUT_IMAGE = aboutImg;
 
 const ABOUT_BADGES = [
   { icon: ShieldCheck, label: "Girl Child Protection", sub: "Awareness & safety drives" },
@@ -125,25 +121,35 @@ const SOCIAL_IMPACT = {
 };
 
 export default function BetiBachao() {
+  const { images: galleryImages } = useGallery(SLUG);
+  const { content } = useInitiativeContent(SLUG, DEFAULT_CONTENT);
+  const { slides: fetchedSlides } = useHeroSlides(SLUG);
+
+  const heroSlides =
+    fetchedSlides.length > 0
+      ? fetchedSlides.map((s) => ({ image: s.image, title: s.title, subtitle: s.subtitle }))
+      : DEFAULT_HERO_SLIDES;
+
+  const aboutImage = content.aboutImage || DEFAULT_ABOUT_IMAGE;
+
   return (
     <InitiativePage
-      heroSlides={HERO_SLIDES}
-      heroTitle="Beti Bachao Initiative"
-      heroTagline="Empowering Every Girl for a Better Tomorrow"
+      heroSlides={heroSlides}
+      heroTitle={content.heroTitle}
+      heroTagline={content.heroTagline}
       accentColor="bg-coral"
       accentText="text-amber-600"
-      aboutText={ABOUT_TEXT}
-      aboutImage={g7}
+      aboutText={content.aboutText.split("\n")}
+      aboutImage={aboutImage}
       aboutBadges={ABOUT_BADGES}
       activities={ACTIVITIES}
-      galleryImages={[g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12]}
+      galleryImages={galleryImages.map((img) => img.url)}
       statsRow={STATS}
-      ctaTitle="Support Girl Child Empowerment"
-      ctaBody="Join us in creating equal opportunities and brighter futures for every girl. Your participation strengthens communities and transforms lives."
-      ctaButtonLabel="Join the Initiative"
+      ctaTitle={content.ctaTitle}
+      ctaBody={content.ctaBody}
+      ctaButtonLabel={content.ctaButtonLabel}
       ctaButtonHref="/#contact"
       ctaSideImage={heroImg3}
-      statsRow={STATS}
       socialImpact={SOCIAL_IMPACT}
       icon={GraduationCap}
     />

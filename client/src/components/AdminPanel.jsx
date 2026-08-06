@@ -1,3 +1,11 @@
+/**
+ * AdminPanel.jsx
+ * Route: /admin
+ *
+ * Single-file Admin Panel: Login, Gallery, Team, Events, and
+ * Initiative Content management. Data persists to localStorage
+ * (no backend wired up yet — see note in chat).
+ */
 
 import { useState, useEffect, useRef } from "react";
 import {
@@ -24,8 +32,44 @@ import {
   Check,
   ExternalLink,
   MapPin,
+  Layers,
+  ClipboardList,
+  Droplet,
+  Phone,
+  Mail,
 } from "lucide-react";
+
 import logo from "../assets/logo.png";
+import {
+  login,
+  isLoggedIn,
+  setToken,
+  clearToken,
+  getTeam,
+  createTeamMember,
+  updateTeamMember,
+  deleteTeamMember,
+  getGallery,
+  addGalleryImage,
+  deleteGalleryImage,
+  getEvents,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  getContent,
+  updateContent,
+  uploadImage,
+  getStats,
+  getHeroSlides,
+  addHeroSlide,
+  deleteHeroSlide,
+  getVolunteers,
+  updateVolunteerStatus,
+  deleteVolunteer,
+  getBloodDonors,
+  updateBloodDonorStatus,
+  deleteBloodDonor,
+} from "../lib/api";
 
 // ─── Config ───────────────────────────────────────────────────────────────
 
@@ -49,6 +93,13 @@ const TAG_COLORS = [
   { value: "bg-teal", label: "Teal" },
   { value: "bg-gold", label: "Gold" },
 ];
+
+const STATUS_STYLES = {
+  new: "bg-coral/10 text-coral",
+  contacted: "bg-gold/15 text-amber-700",
+  onboarded: "bg-teal/10 text-teal",
+  verified: "bg-teal/10 text-teal",
+};
 
 const STORAGE_KEYS = {
   auth: "dms_admin_auth",
@@ -113,6 +164,58 @@ const inputCls =
 const labelCls =
   "block text-xs font-semibold uppercase tracking-wider text-charcoal/50 mb-1.5";
 
+function ImageUploadField({ label = "Image URL", value, onChange, showToast }) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const { url } = await uploadImage(file);
+      onChange(url);
+      showToast("Image uploaded successfully");
+    } catch (err) {
+      showToast(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <div>
+      <label className={labelCls}>{label}</label>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`${inputCls} min-w-0 flex-1`}
+          placeholder="Paste image URL"
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFile}
+          className="hidden"
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="px-4 py-2.5 rounded-xl border border-charcoal/15 text-charcoal font-medium text-sm hover:bg-cream/60 transition-colors flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
+        >
+          <Upload className="w-4 h-4" /> {uploading ? "Uploading..." : "Upload"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Admin Login ──────────────────────────────────────────────────────────
 
 function AdminLogin({ onSuccess }) {
@@ -122,22 +225,21 @@ function AdminLogin({ onSuccess }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    setTimeout(() => {
-      if (
-        username.trim() === ADMIN_CREDENTIALS.username &&
-        password === ADMIN_CREDENTIALS.password
-      ) {
-        saveJSON(STORAGE_KEYS.auth, true);
-        onSuccess();
-      } else {
-        setError("Invalid username or password. Please try again.");
-      }
+    try {
+      const { token } = await login(username.trim(), password);
+      setToken(token);
+      onSuccess();
+    } catch (err) {
+      setError(
+        err.message || "Invalid username or password. Please try again.",
+      );
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -154,7 +256,11 @@ function AdminLogin({ onSuccess }) {
           <div className="absolute bottom-0 -left-10 w-64 h-64 bg-cream/5 rounded-full" />
 
           <div className="relative">
-            <img src={logo} alt="DMS AAROHI" className="h-12 object-contain bg-cream rounded-xl p-1.5 mb-8" />
+            <img
+              src={logo}
+              alt="DMS AAROHI"
+              className="h-12 object-contain bg-cream rounded-xl p-1.5 mb-8"
+            />
             <span className="inline-block text-gold font-semibold uppercase tracking-[0.25em] text-xs mb-3">
               Admin Console
             </span>
@@ -182,7 +288,11 @@ function AdminLogin({ onSuccess }) {
         {/* Right form panel */}
         <div className="bg-white p-8 md:p-10 flex flex-col justify-center">
           <div className="md:hidden mb-6 text-center">
-            <img src={logo} alt="DMS AAROHI" className="h-10 object-contain mx-auto mb-3" />
+            <img
+              src={logo}
+              alt="DMS AAROHI"
+              className="h-10 object-contain mx-auto mb-3"
+            />
           </div>
           <span className="inline-block text-coral font-semibold uppercase tracking-[0.25em] text-xs mb-2">
             Welcome Back
@@ -228,7 +338,11 @@ function AdminLogin({ onSuccess }) {
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-charcoal/35 hover:text-charcoal/60 transition-colors"
                   tabIndex={-1}
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -267,9 +381,12 @@ function AdminLogin({ onSuccess }) {
 const NAV_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "gallery", label: "Gallery", icon: ImageIcon },
+  { key: "hero", label: "Hero & About Images", icon: Layers },
   { key: "team", label: "Team", icon: Users },
   { key: "events", label: "Events", icon: Calendar },
   { key: "content", label: "Initiative Content", icon: FileText },
+  { key: "volunteers", label: "Volunteers", icon: ClipboardList },
+  { key: "donors", label: "Blood Donors", icon: Droplet },
 ];
 
 function Sidebar({ active, setActive, onLogout, mobileOpen, setMobileOpen }) {
@@ -281,8 +398,14 @@ function Sidebar({ active, setActive, onLogout, mobileOpen, setMobileOpen }) {
         } md:translate-x-0`}
       >
         <div className="p-6 border-b border-cream/10">
-          <img src={logo} alt="DMS AAROHI" className="h-9 object-contain bg-cream rounded-lg p-1 mb-4" />
-          <p className="font-display font-bold text-lg leading-tight">Admin Panel</p>
+          <img
+            src={logo}
+            alt="DMS AAROHI"
+            className="h-9 object-contain bg-cream rounded-lg p-1 mb-4"
+          />
+          <p className="font-display font-bold text-lg leading-tight">
+            Admin Panel
+          </p>
           <p className="text-cream/45 text-xs mt-0.5">DMS AAROHI</p>
         </div>
 
@@ -311,7 +434,7 @@ function Sidebar({ active, setActive, onLogout, mobileOpen, setMobileOpen }) {
         </nav>
 
         <div className="p-4 border-t border-cream/10 space-y-1.5">
-           <a
+          <a
             href="/"
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-cream/60 hover:bg-cream/5 hover:text-cream transition-all duration-200"
           >
@@ -339,27 +462,56 @@ function Sidebar({ active, setActive, onLogout, mobileOpen, setMobileOpen }) {
 }
 
 // ─── Dashboard Overview ───────────────────────────────────────────────────
+function DashboardOverview({ setActive }) {
+  const [stats, setStats] = useState(null);
+  const [events, setEvents] = useState([]);
 
-function DashboardOverview({ gallery, team, events, setActive }) {
-  const totalImages = Object.values(gallery).reduce((sum, arr) => sum + arr.length, 0);
+  useEffect(() => {
+    getStats()
+      .then(setStats)
+      .catch(() => setStats(null));
+    getEvents()
+      .then(setEvents)
+      .catch(() => setEvents([]));
+  }, []);
+
+  const INITIATIVE_LABELS = {
+    home: "Homepage",
+    "blood-donation": "Blood Donation & Healthcare",
+    "child-education": "Child Education",
+    "beti-bachao": "Beti Bachao Initiative",
+    "cloth-distribution": "Cloth Distribution",
+    "senior-citizen": "Senior Citizen Welfare",
+    environment: "Environment Awareness",
+  };
 
   const cards = [
-    { label: "Gallery Images", value: totalImages, icon: ImageIcon, color: "bg-coral", tab: "gallery" },
-    { label: "Team Members", value: team.length, icon: Users, color: "bg-teal", tab: "team" },
-    { label: "Upcoming Events", value: events.length, icon: Calendar, color: "bg-gold", tab: "events" },
-    { label: "Initiatives", value: INITIATIVES.length - 1, icon: FileText, color: "bg-coral", tab: "content" },
+    { label: "Team Members", value: stats?.teamCount ?? "—", icon: Users, color: "bg-teal", tab: "team" },
+    { label: "Upcoming Events", value: stats?.eventsCount ?? "—", icon: Calendar, color: "bg-gold", tab: "events" },
+    { label: "Volunteer Registrations", value: stats?.volunteersCount ?? "—", icon: ClipboardList, color: "bg-teal", tab: "volunteers" },
+    { label: "Blood Donor Registrations", value: stats?.bloodDonorsCount ?? "—", icon: Droplet, color: "bg-coral", tab: "donors" },
   ];
 
   return (
     <div>
-      <h2 className="font-display font-bold text-2xl md:text-3xl text-charcoal mb-1">
-        Welcome back, Admin 👋
-      </h2>
-      <p className="text-charcoal/55 mb-8">
-        Here's a quick overview of your website's content.
-      </p>
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal via-teal to-[#0a3f39] text-cream p-7 md:p-9 mb-8">
+        <div className="absolute -top-10 -right-10 w-52 h-52 bg-gold/10 rounded-full" />
+        <div className="absolute -bottom-16 -left-10 w-64 h-64 bg-cream/5 rounded-full" />
+        <div className="relative">
+          <span className="inline-block text-gold font-semibold uppercase tracking-[0.25em] text-xs mb-3">
+            Admin Console
+          </span>
+          <h2 className="font-display font-bold text-2xl md:text-3xl mb-1">
+            Welcome back, Admin 👋
+          </h2>
+          <p className="text-cream/70 max-w-lg">
+             Every change here is saved to the database
+            and reflects live on the website instantly.
+          </p>
+        </div>
+      </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+      <div className="grid sm:grid-cols-3 lg:grid-cols-4 gap-5 mb-8">
         {cards.map((c) => {
           const Icon = c.icon;
           return (
@@ -368,10 +520,14 @@ function DashboardOverview({ gallery, team, events, setActive }) {
               onClick={() => setActive(c.tab)}
               className="text-left bg-white rounded-2xl p-6 shadow-sm border border-charcoal/5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
             >
-              <div className={`w-12 h-12 rounded-xl ${c.color} flex items-center justify-center mb-4 shadow-md`}>
+              <div
+                className={`w-12 h-12 rounded-xl ${c.color} flex items-center justify-center mb-4 shadow-md`}
+              >
                 <Icon className="w-6 h-6 text-cream" />
               </div>
-              <p className="font-display font-bold text-3xl text-charcoal mb-1">{c.value}</p>
+              <p className="font-display font-bold text-3xl text-charcoal mb-1">
+                {c.value}
+              </p>
               <p className="text-charcoal/55 text-sm font-medium flex items-center gap-1">
                 {c.label}
                 <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
@@ -381,27 +537,103 @@ function DashboardOverview({ gallery, team, events, setActive }) {
         })}
       </div>
 
-      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-charcoal/5">
-        <h3 className="font-display font-bold text-xl text-charcoal mb-4">Quick Actions</h3>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {[
-            { label: "Add Gallery Image", tab: "gallery", icon: ImageIcon, color: "text-coral" },
-            { label: "Add Team Member", tab: "team", icon: Users, color: "text-teal" },
-            { label: "Add Event", tab: "events", icon: Calendar, color: "text-gold" },
-            { label: "Edit Initiative", tab: "content", icon: FileText, color: "text-coral" },
-          ].map((a) => {
-            const Icon = a.icon;
-            return (
-              <button
-                key={a.label}
-                onClick={() => setActive(a.tab)}
-                className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-charcoal/10 hover:border-coral/40 hover:bg-coral/5 transition-all duration-200 text-sm font-medium text-charcoal"
-              >
-                <Icon className={`w-4 h-4 ${a.color}`} />
-                {a.label}
-              </button>
-            );
-          })}
+      <div className="grid lg:grid-cols-[1fr_1fr] gap-6">
+        <div className="bg-white rounded-2xl p-6 md:p-7 shadow-sm border border-charcoal/5">
+          <h3 className="font-display font-bold text-lg text-charcoal mb-4">
+            Gallery by Initiative
+          </h3>
+          <div className="space-y-3">
+            {stats &&
+              Object.entries(stats.galleryByInitiative).map(([key, count]) => (
+                <div
+                  key={key}
+                  className="flex items-center justify-between gap-3"
+                >
+                  <p className="text-sm text-charcoal/70 truncate">
+                    {INITIATIVE_LABELS[key] || key}
+                  </p>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="w-28 h-1.5 rounded-full bg-cream overflow-hidden">
+                      <div
+                        className="h-full bg-coral rounded-full"
+                        style={{
+                          width: `${Math.min(100, (count / 12) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs font-semibold text-charcoal w-6 text-right">
+                      {count}
+                    </span>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 md:p-7 shadow-sm border border-charcoal/5">
+          <h3 className="font-display font-bold text-lg text-charcoal mb-4">
+            Quick Actions
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              {
+                label: "Add Gallery Image",
+                tab: "gallery",
+                icon: ImageIcon,
+                color: "text-coral",
+              },
+              {
+                label: "Add Team Member",
+                tab: "team",
+                icon: Users,
+                color: "text-teal",
+              },
+              {
+                label: "Add Event",
+                tab: "events",
+                icon: Calendar,
+                color: "text-gold",
+              },
+              {
+                label: "Edit Initiative Text",
+                tab: "content",
+                icon: FileText,
+                color: "text-coral",
+              },
+            ].map((a) => {
+              const Icon = a.icon;
+              return (
+                <button
+                  key={a.label}
+                  onClick={() => setActive(a.tab)}
+                  className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-charcoal/10 hover:border-coral/40 hover:bg-coral/5 transition-all duration-200 text-sm font-medium text-charcoal"
+                >
+                  <Icon className={`w-4 h-4 ${a.color}`} />
+                  {a.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 pt-5 border-t border-charcoal/8">
+            <p className="text-xs font-semibold uppercase tracking-wider text-charcoal/40 mb-3">
+              Upcoming Events
+            </p>
+            <div className="space-y-2">
+              {events.slice(0, 3).map((e) => (
+                <div key={e._id} className="flex items-center gap-3 text-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-coral flex-shrink-0" />
+                  <span className="text-charcoal/70 truncate">{e.title}</span>
+                  <span className="text-charcoal/40 text-xs ml-auto flex-shrink-0">
+                    {e.date}
+                  </span>
+                </div>
+              ))}
+              {events.length === 0 && (
+                <p className="text-sm text-charcoal/40">No events yet.</p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -409,53 +641,91 @@ function DashboardOverview({ gallery, team, events, setActive }) {
 }
 
 // ─── Gallery Manager ──────────────────────────────────────────────────────
+const ADMIN_INITIATIVES = [
+  { key: "home", label: "Homepage" },
+  { key: "blood-donation", label: "Blood Donation & Healthcare" },
+  { key: "child-education", label: "Child Education" },
+  { key: "beti-bachao", label: "Beti Bachao Initiative" },
+  { key: "cloth-distribution", label: "Cloth Distribution" },
+  { key: "senior-citizen", label: "Senior Citizen Welfare" },
+  { key: "environment", label: "Environment Awareness" },
+];
 
-function GalleryManager({ gallery, setGallery, showToast }) {
-  const [selected, setSelected] = useState(INITIATIVES[0].key);
+function GalleryManager({ showToast }) {
+  const [selected, setSelected] = useState(ADMIN_INITIATIVES[0].key);
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [newUrl, setNewUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const images = gallery[selected] || [];
-
-  const commit = (updatedImages) => {
-    const updated = { ...gallery, [selected]: updatedImages };
-    setGallery(updated);
-    saveJSON(STORAGE_KEYS.gallery, updated);
+  const load = () => {
+    setLoading(true);
+    getGallery(selected)
+      .then(setImages)
+      .catch(() => showToast("Failed to load gallery"))
+      .finally(() => setLoading(false));
   };
 
-  const addImage = () => {
+  useEffect(load, [selected]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const addImage = async () => {
     if (!newUrl.trim()) return;
-    commit([...images, { id: genId(), url: newUrl.trim() }]);
-    setNewUrl("");
-    showToast("Image added to gallery");
+    try {
+      await addGalleryImage(selected, newUrl.trim());
+      setNewUrl("");
+      load();
+      showToast("Image added — now live on the website");
+    } catch (err) {
+      showToast(err.message || "Failed to add image");
+    }
   };
 
-  const removeImage = (id) => {
-    commit(images.filter((img) => img.id !== id));
-    showToast("Image removed");
-  };
-
-  const handleFile = (e) => {
+  const handleFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setNewUrl(reader.result);
-    reader.readAsDataURL(file);
+    setUploading(true);
+    try {
+      const { url } = await uploadImage(file);
+      await addGalleryImage(selected, url);
+      load();
+      showToast("Image uploaded and added to the website");
+    } catch (err) {
+      showToast(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const removeImage = async (id) => {
+    try {
+      await deleteGalleryImage(selected, id);
+      setImages((prev) => prev.filter((img) => img._id !== id));
+      showToast("Image removed from the website");
+    } catch (err) {
+      showToast(err.message || "Failed to remove image");
+    }
   };
 
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-charcoal">Gallery Management</h2>
-          <p className="text-charcoal/55 text-sm mt-1">Manage photos shown in each initiative's gallery.</p>
+          <h2 className="font-display font-bold text-2xl text-charcoal">
+            Gallery Management
+          </h2>
+          <p className="text-charcoal/55 text-sm mt-1">
+            Changes here appear directly in this page's gallery on the live
+            website.
+          </p>
         </div>
         <select
           value={selected}
           onChange={(e) => setSelected(e.target.value)}
           className={`${inputCls} sm:w-72`}
         >
-          {INITIATIVES.map((i) => (
+          {ADMIN_INITIATIVES.map((i) => (
             <option key={i.key} value={i.key}>
               {i.label}
             </option>
@@ -463,25 +733,33 @@ function GalleryManager({ gallery, setGallery, showToast }) {
         </select>
       </div>
 
-      {/* Add image */}
       <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-charcoal/5 mb-6">
-        <p className="text-sm font-semibold text-charcoal mb-3">Add New Image</p>
+        <p className="text-sm font-semibold text-charcoal mb-3">
+          Add New Image
+        </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
-            value={typeof newUrl === "string" && newUrl.startsWith("data:") ? "Image selected from device" : newUrl}
+            value={newUrl}
             onChange={(e) => setNewUrl(e.target.value)}
             placeholder="Paste image URL, or upload from your device →"
             className={`${inputCls} flex-1`}
           />
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFile}
+            className="hidden"
+          />
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="px-5 py-2.5 rounded-xl border border-charcoal/15 text-charcoal font-medium text-sm hover:bg-cream/60 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+            disabled={uploading}
+            className="px-5 py-2.5 rounded-xl border border-charcoal/15 text-charcoal font-medium text-sm hover:bg-cream/60 transition-colors flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
           >
-            <Upload className="w-4 h-4" />
-            Upload
+            <Upload className="w-4 h-4" />{" "}
+            {uploading ? "Uploading..." : "Upload"}
           </button>
           <button
             type="button"
@@ -489,28 +767,31 @@ function GalleryManager({ gallery, setGallery, showToast }) {
             disabled={!newUrl.trim()}
             className="px-6 py-2.5 rounded-xl bg-coral text-cream font-semibold text-sm shadow-md hover:bg-coral-dark transition-colors flex items-center justify-center gap-2 disabled:opacity-40 whitespace-nowrap"
           >
-            <Plus className="w-4 h-4" />
-            Add
+            <Plus className="w-4 h-4" /> Add
           </button>
         </div>
       </div>
 
-      {/* Images grid */}
-      {images.length === 0 ? (
-        <EmptyState icon={ImageIcon} text="No images yet for this initiative. Add your first one above." />
+      {loading ? (
+        <p className="text-charcoal/40 text-sm">Loading gallery...</p>
+      ) : images.length === 0 ? (
+        <EmptyState icon={ImageIcon} text="No images for this page yet." />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {images.map((img) => (
             <div
-              key={img.id}
+              key={img._id}
               className="group relative aspect-square rounded-2xl overflow-hidden shadow-sm border border-charcoal/5"
             >
-              <img src={img.url} alt="" className="w-full h-full object-cover" />
+              <img
+                src={img.url}
+                alt=""
+                className="w-full h-full object-cover"
+              />
               <div className="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/50 transition-colors duration-200 flex items-center justify-center">
                 <button
-                  onClick={() => removeImage(img.id)}
+                  onClick={() => removeImage(img._id)}
                   className="opacity-0 group-hover:opacity-100 w-10 h-10 rounded-full bg-coral text-cream flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-200"
-                  aria-label="Remove image"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -523,69 +804,461 @@ function GalleryManager({ gallery, setGallery, showToast }) {
   );
 }
 
-// ─── Team Manager ─────────────────────────────────────────────────────────
+function HeroImagesManager({ showToast }) {
+  const [selected, setSelected] = useState(ADMIN_INITIATIVES[0].key);
+  const [slides, setSlides] = useState([]);
+  const [loadingSlides, setLoadingSlides] = useState(true);
+  const [slideForm, setSlideForm] = useState({ image: "", title: "", subtitle: "" });
+  const [uploadingSlide, setUploadingSlide] = useState(false);
+  const slideFileRef = useRef(null);
 
-function TeamManager({ team, setTeam, showToast }) {
+  const [aboutImage, setAboutImage] = useState("");
+  const [loadingAbout, setLoadingAbout] = useState(true);
+  const [uploadingAbout, setUploadingAbout] = useState(false);
+  const aboutFileRef = useRef(null);
+
+  const loadSlides = () => {
+    setLoadingSlides(true);
+    getHeroSlides(selected).then(setSlides).catch(() => showToast("Failed to load hero slides")).finally(() => setLoadingSlides(false));
+  };
+  const loadAbout = () => {
+    setLoadingAbout(true);
+    getContent(selected).then((data) => setAboutImage(data?.aboutImage || "")).catch(() => setAboutImage("")).finally(() => setLoadingAbout(false));
+  };
+
+  useEffect(() => { loadSlides(); loadAbout(); }, [selected]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const addSlide = async () => {
+    if (!slideForm.image.trim()) return;
+    try {
+      await addHeroSlide(selected, slideForm);
+      setSlideForm({ image: "", title: "", subtitle: "" });
+      loadSlides();
+      showToast("Hero slide added — now live on the website");
+    } catch (err) {
+      showToast(err.message || "Failed to add slide");
+    }
+  };
+
+  const handleSlideFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingSlide(true);
+    try {
+      const { url } = await uploadImage(file);
+      setSlideForm((f) => ({ ...f, image: url }));
+    } catch (err) {
+      showToast(err.message || "Upload failed");
+    } finally {
+      setUploadingSlide(false);
+      e.target.value = "";
+    }
+  };
+
+  const removeSlide = async (id) => {
+    try {
+      await deleteHeroSlide(selected, id);
+      setSlides((prev) => prev.filter((s) => s._id !== id));
+      showToast("Hero slide removed");
+    } catch (err) {
+      showToast(err.message || "Failed to remove slide");
+    }
+  };
+
+  const handleAboutFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAbout(true);
+    try {
+      const { url } = await uploadImage(file);
+      setAboutImage(url);
+      await updateContent(selected, { aboutImage: url });
+      showToast("About image updated — now live on the website");
+    } catch (err) {
+      showToast(err.message || "Upload failed");
+    } finally {
+      setUploadingAbout(false);
+      e.target.value = "";
+    }
+  };
+
+  const saveAboutUrl = async () => {
+    try {
+      await updateContent(selected, { aboutImage });
+      showToast("About image updated — now live on the website");
+    } catch (err) {
+      showToast(err.message || "Failed to save about image");
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 className="font-display font-bold text-2xl text-charcoal">Hero & About Images</h2>
+          <p className="text-charcoal/55 text-sm mt-1">Manage the rotating hero slider and the About section photo for each page.</p>
+        </div>
+        <select value={selected} onChange={(e) => setSelected(e.target.value)} className={`${inputCls} sm:w-72`}>
+          {ADMIN_INITIATIVES.map((i) => <option key={i.key} value={i.key}>{i.label}</option>)}
+        </select>
+      </div>
+
+      {/* Hero Slides */}
+      <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-charcoal/5 mb-6">
+        <p className="text-sm font-semibold text-charcoal mb-3">Hero Slider Images</p>
+        <div className="grid sm:grid-cols-2 gap-3 mb-3">
+          <input type="text" value={slideForm.title} onChange={(e) => setSlideForm({ ...slideForm, title: e.target.value })} placeholder="Slide title" className={inputCls} />
+          <input type="text" value={slideForm.subtitle} onChange={(e) => setSlideForm({ ...slideForm, subtitle: e.target.value })} placeholder="Slide subtitle" className={inputCls} />
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            value={slideForm.image}
+            onChange={(e) => setSlideForm({ ...slideForm, image: e.target.value })}
+            placeholder="Paste image URL, or upload →"
+            className={`${inputCls} flex-1`}
+          />
+          <input ref={slideFileRef} type="file" accept="image/*" onChange={handleSlideFile} className="hidden" />
+          <button type="button" onClick={() => slideFileRef.current?.click()} disabled={uploadingSlide} className="px-5 py-2.5 rounded-xl border border-charcoal/15 text-charcoal font-medium text-sm hover:bg-cream/60 transition-colors flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50">
+            <Upload className="w-4 h-4" /> {uploadingSlide ? "Uploading..." : "Upload"}
+          </button>
+          <button type="button" onClick={addSlide} disabled={!slideForm.image.trim()} className="px-6 py-2.5 rounded-xl bg-coral text-cream font-semibold text-sm shadow-md hover:bg-coral-dark transition-colors flex items-center justify-center gap-2 disabled:opacity-40 whitespace-nowrap">
+            <Plus className="w-4 h-4" /> Add Slide
+          </button>
+        </div>
+
+        {loadingSlides ? (
+          <p className="text-charcoal/40 text-sm mt-4">Loading slides...</p>
+        ) : slides.length === 0 ? (
+          <p className="text-charcoal/40 text-sm mt-4">No custom slides yet — the page is showing its built-in default slides.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-5">
+            {slides.map((slide) => (
+              <div key={slide._id} className="group relative rounded-2xl overflow-hidden shadow-sm border border-charcoal/5 aspect-[4/5]">
+                <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/10 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="text-cream text-xs font-semibold truncate">{slide.title}</p>
+                </div>
+                <button onClick={() => removeSlide(slide._id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 w-8 h-8 rounded-full bg-coral text-cream flex items-center justify-center shadow-lg transition-all duration-200">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* About Image */}
+      <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-charcoal/5">
+        <p className="text-sm font-semibold text-charcoal mb-3">About Section Image</p>
+        {loadingAbout ? (
+          <p className="text-charcoal/40 text-sm">Loading...</p>
+        ) : (
+          <div className="grid sm:grid-cols-[160px_1fr] gap-5 items-start">
+            <div className="w-full sm:w-40 aspect-[4/5] rounded-2xl overflow-hidden bg-cream border border-charcoal/10 flex-shrink-0">
+              {aboutImage ? (
+                <img src={aboutImage} alt="About section" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-charcoal/25"><ImageIcon className="w-6 h-6" /></div>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-charcoal/50 mb-3">
+                {aboutImage ? "This image is live on the website." : "No custom image set — the page is using its built-in default photo."}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input type="text" value={aboutImage} onChange={(e) => setAboutImage(e.target.value)} placeholder="Paste image URL, or upload →" className={`${inputCls} flex-1`} />
+                <input ref={aboutFileRef} type="file" accept="image/*" onChange={handleAboutFile} className="hidden" />
+                <button type="button" onClick={() => aboutFileRef.current?.click()} disabled={uploadingAbout} className="px-5 py-2.5 rounded-xl border border-charcoal/15 text-charcoal font-medium text-sm hover:bg-cream/60 transition-colors flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50">
+                  <Upload className="w-4 h-4" /> {uploadingAbout ? "Uploading..." : "Upload"}
+                </button>
+                <button type="button" onClick={saveAboutUrl} className="px-6 py-2.5 rounded-xl bg-teal text-cream font-semibold text-sm shadow-md hover:scale-[1.02] transition-all flex items-center gap-2 whitespace-nowrap">
+                  <Save className="w-4 h-4" /> Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function VolunteersManager({ showToast }) {
+  const [volunteers, setVolunteers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  const load = () => {
+    setLoading(true);
+    getVolunteers().then(setVolunteers).catch(() => showToast("Failed to load volunteers")).finally(() => setLoading(false));
+  };
+  useEffect(load, []);
+
+  const handleStatus = async (id, status) => {
+    try {
+      await updateVolunteerStatus(id, status);
+      setVolunteers((prev) => prev.map((v) => (v._id === id ? { ...v, status } : v)));
+    } catch (err) {
+      showToast(err.message || "Failed to update status");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteVolunteer(id);
+      setVolunteers((prev) => prev.filter((v) => v._id !== id));
+      showToast("Volunteer entry removed");
+    } catch (err) {
+      showToast(err.message || "Failed to remove entry");
+    }
+  };
+
+  const filtered = volunteers.filter((v) =>
+    `${v.name} ${v.email} ${v.phone} ${v.city}`.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 className="font-display font-bold text-2xl text-charcoal">Volunteer Registrations</h2>
+          <p className="text-charcoal/55 text-sm mt-1">People who submitted the "Become a Volunteer" form on the website.</p>
+        </div>
+        <div className="relative sm:w-72">
+          <Search className="w-4 h-4 text-charcoal/35 absolute left-4 top-1/2 -translate-y-1/2" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, email, phone..." className={`${inputCls} pl-11`} />
+        </div>
+      </div>
+
+      {loading ? (
+        <p className="text-charcoal/40 text-sm">Loading volunteers...</p>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={Users} text="No volunteer registrations yet." />
+      ) : (
+        <div className="space-y-4">
+          {filtered.map((v) => (
+            <div key={v._id} className="bg-white rounded-2xl p-5 shadow-sm border border-charcoal/5">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                <div>
+                  <p className="font-display font-bold text-charcoal">{v.name}</p>
+                  <p className="text-xs text-charcoal/45 mt-0.5">
+                    Submitted {new Date(v.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select value={v.status} onChange={(e) => handleStatus(v._id, e.target.value)} className={`text-xs font-semibold rounded-full px-3 py-1.5 border-0 ${STATUS_STYLES[v.status]}`}>
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="onboarded">Onboarded</option>
+                  </select>
+                  <button onClick={() => handleDelete(v._id)} className="w-8 h-8 rounded-lg bg-coral/10 text-coral flex items-center justify-center hover:bg-coral hover:text-cream transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-2 text-sm">
+                <p className="flex items-center gap-2 text-charcoal/70"><Phone className="w-3.5 h-3.5 text-coral flex-shrink-0" /> {v.phone}</p>
+                <p className="flex items-center gap-2 text-charcoal/70 truncate"><Mail className="w-3.5 h-3.5 text-coral flex-shrink-0" /> {v.email}</p>
+                {v.city && <p className="text-charcoal/70">City: {v.city}</p>}
+                {v.age && <p className="text-charcoal/70">Age: {v.age}</p>}
+                {v.occupation && <p className="text-charcoal/70">Occupation: {v.occupation}</p>}
+                {v.availability && <p className="text-charcoal/70">Availability: {v.availability}</p>}
+                {v.mode && <p className="text-charcoal/70">Mode: {v.mode}</p>}
+                {v.interestArea && <p className="text-charcoal/70">Interest: {v.interestArea}</p>}
+                {v.heardFrom && <p className="text-charcoal/70">Heard from: {v.heardFrom}</p>}
+              </div>
+              {v.message && <p className="mt-3 text-sm text-charcoal/60 bg-cream/60 rounded-xl p-3">{v.message}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BloodDonorsManager({ showToast }) {
+  const [donors, setDonors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  const load = () => {
+    setLoading(true);
+    getBloodDonors().then(setDonors).catch(() => showToast("Failed to load blood donors")).finally(() => setLoading(false));
+  };
+  useEffect(load, []);
+
+  const handleStatus = async (id, status) => {
+    try {
+      await updateBloodDonorStatus(id, status);
+      setDonors((prev) => prev.map((d) => (d._id === id ? { ...d, status } : d)));
+    } catch (err) {
+      showToast(err.message || "Failed to update status");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteBloodDonor(id);
+      setDonors((prev) => prev.filter((d) => d._id !== id));
+      showToast("Blood donor entry removed");
+    } catch (err) {
+      showToast(err.message || "Failed to remove entry");
+    }
+  };
+
+  const filtered = donors.filter((d) =>
+    `${d.name} ${d.email} ${d.phone} ${d.city} ${d.bloodGroup}`.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 className="font-display font-bold text-2xl text-charcoal">Blood Donor Registrations</h2>
+          <p className="text-charcoal/55 text-sm mt-1">People who registered as blood donors on the Blood Donation page.</p>
+        </div>
+        <div className="relative sm:w-72">
+          <Search className="w-4 h-4 text-charcoal/35 absolute left-4 top-1/2 -translate-y-1/2" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, blood group..." className={`${inputCls} pl-11`} />
+        </div>
+      </div>
+
+      {loading ? (
+        <p className="text-charcoal/40 text-sm">Loading donors...</p>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={Droplet} text="No blood donor registrations yet." />
+      ) : (
+        <div className="space-y-4">
+          {filtered.map((d) => (
+            <div key={d._id} className="bg-white rounded-2xl p-5 shadow-sm border border-charcoal/5">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3">
+                  {d.bloodGroup && (
+                    <span className="w-10 h-10 rounded-full bg-coral text-cream font-bold text-xs flex items-center justify-center flex-shrink-0">{d.bloodGroup}</span>
+                  )}
+                  <div>
+                    <p className="font-display font-bold text-charcoal">{d.name}</p>
+                    <p className="text-xs text-charcoal/45 mt-0.5">
+                      Registered {new Date(d.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select value={d.status} onChange={(e) => handleStatus(d._id, e.target.value)} className={`text-xs font-semibold rounded-full px-3 py-1.5 border-0 ${STATUS_STYLES[d.status]}`}>
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="verified">Verified</option>
+                  </select>
+                  <button onClick={() => handleDelete(d._id)} className="w-8 h-8 rounded-lg bg-coral/10 text-coral flex items-center justify-center hover:bg-coral hover:text-cream transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-2 text-sm">
+                <p className="flex items-center gap-2 text-charcoal/70"><Phone className="w-3.5 h-3.5 text-coral flex-shrink-0" /> {d.phone}</p>
+                <p className="flex items-center gap-2 text-charcoal/70 truncate"><Mail className="w-3.5 h-3.5 text-coral flex-shrink-0" /> {d.email}</p>
+                {d.city && <p className="text-charcoal/70">City: {d.city}</p>}
+                {d.age && <p className="text-charcoal/70">Age: {d.age}</p>}
+                {d.weight && <p className="text-charcoal/70">Weight: {d.weight} kg</p>}
+                {d.lastDonationDate && <p className="text-charcoal/70">Last donation: {d.lastDonationDate}</p>}
+                {d.preferredCamp && <p className="text-charcoal/70">Preferred camp: {d.preferredCamp}</p>}
+              </div>
+              {d.notes && <p className="mt-3 text-sm text-charcoal/60 bg-cream/60 rounded-xl p-3">{d.notes}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Team Manager ─────────────────────────────────────────────────────────
+function TeamManager({ showToast }) {
+  const [team, setTeam] = useState([]);
+  const [loading, setLoading] = useState(true);
   const emptyForm = { name: "", role: "", image: "" };
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
 
-  const commit = (updated) => {
-    setTeam(updated);
-    saveJSON(STORAGE_KEYS.team, updated);
+  const load = () => {
+    setLoading(true);
+    getTeam()
+      .then(setTeam)
+      .catch(() => showToast("Failed to load team"))
+      .finally(() => setLoading(false));
   };
+  useEffect(load, []);
 
   const openAdd = () => {
     setForm(emptyForm);
     setEditingId(null);
     setFormOpen(true);
   };
-
-  const openEdit = (member) => {
-    setForm({ name: member.name, role: member.role, image: member.image });
-    setEditingId(member.id);
+  const openEdit = (m) => {
+    setForm({ name: m.name, role: m.role, image: m.image });
+    setEditingId(m._id);
     setFormOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim() || !form.role.trim()) return;
-    if (editingId) {
-      commit(team.map((m) => (m.id === editingId ? { ...m, ...form } : m)));
-      showToast("Team member updated");
-    } else {
-      commit([...team, { id: genId(), ...form }]);
-      showToast("Team member added");
+    try {
+      if (editingId) {
+        await updateTeamMember(editingId, form);
+        showToast("Team member updated on the website");
+      } else {
+        await createTeamMember(form);
+        showToast("Team member added to the website");
+      }
+      setFormOpen(false);
+      load();
+    } catch (err) {
+      showToast(err.message || "Failed to save member");
     }
-    setFormOpen(false);
   };
 
-  const handleDelete = (id) => {
-    commit(team.filter((m) => m.id !== id));
-    showToast("Team member removed");
+  const handleDelete = async (id) => {
+    try {
+      await deleteTeamMember(id);
+      setTeam((prev) => prev.filter((m) => m._id !== id));
+      showToast("Team member removed");
+    } catch (err) {
+      showToast(err.message || "Failed to remove member");
+    }
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-charcoal">Team Management</h2>
-          <p className="text-charcoal/55 text-sm mt-1">Manage the team members shown on the Homepage.</p>
+          <h2 className="font-display font-bold text-2xl text-charcoal">
+            Team Management
+          </h2>
+          <p className="text-charcoal/55 text-sm mt-1">
+            Changes here appear in the Team section on the Homepage.
+          </p>
         </div>
         <button
           onClick={openAdd}
           className="px-5 py-2.5 rounded-xl bg-coral text-cream font-semibold text-sm shadow-md hover:bg-coral-dark transition-colors flex items-center gap-2 whitespace-nowrap"
         >
-          <Plus className="w-4 h-4" />
-          Add Member
+          <Plus className="w-4 h-4" /> Add Member
         </button>
       </div>
 
       {formOpen && (
         <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-charcoal/5 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <p className="font-semibold text-charcoal">{editingId ? "Edit Member" : "New Member"}</p>
-            <button onClick={() => setFormOpen(false)} className="text-charcoal/40 hover:text-charcoal">
+            <p className="font-semibold text-charcoal">
+              {editingId ? "Edit Member" : "New Member"}
+            </p>
+            <button
+              onClick={() => setFormOpen(false)}
+              className="text-charcoal/40 hover:text-charcoal"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -610,39 +1283,41 @@ function TeamManager({ team, setTeam, showToast }) {
                 placeholder="e.g. President"
               />
             </div>
-            <div>
-              <label className={labelCls}>Photo URL</label>
-              <input
-                type="text"
-                value={form.image}
-                onChange={(e) => setForm({ ...form, image: e.target.value })}
-                className={inputCls}
-                placeholder="Image URL"
-              />
-            </div>
+            <ImageUploadField
+              label="Photo URL"
+              value={form.image}
+              onChange={(image) => setForm({ ...form, image })}
+              showToast={showToast}
+            />
           </div>
           <button
             onClick={handleSave}
             className="px-6 py-2.5 rounded-xl bg-teal text-cream font-semibold text-sm shadow-md hover:scale-[1.02] transition-all flex items-center gap-2"
           >
-            <Save className="w-4 h-4" />
+            <Save className="w-4 h-4" />{" "}
             {editingId ? "Update Member" : "Save Member"}
           </button>
         </div>
       )}
 
-      {team.length === 0 ? (
+      {loading ? (
+        <p className="text-charcoal/40 text-sm">Loading team...</p>
+      ) : team.length === 0 ? (
         <EmptyState icon={Users} text="No team members added yet." />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {team.map((member) => (
             <div
-              key={member.id}
+              key={member._id}
               className="bg-white rounded-2xl p-4 shadow-sm border border-charcoal/5 flex items-center gap-4"
             >
               <div className="w-16 h-16 rounded-xl overflow-hidden bg-cream flex-shrink-0">
                 {member.image ? (
-                  <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-charcoal/25">
                     <UserIcon className="w-6 h-6" />
@@ -650,8 +1325,12 @@ function TeamManager({ team, setTeam, showToast }) {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-display font-bold text-charcoal truncate">{member.name}</p>
-                <p className="text-coral text-sm font-medium truncate">{member.role}</p>
+                <p className="font-display font-bold text-charcoal truncate">
+                  {member.name}
+                </p>
+                <p className="text-coral text-sm font-medium truncate">
+                  {member.role}
+                </p>
               </div>
               <div className="flex flex-col gap-1.5 flex-shrink-0">
                 <button
@@ -661,7 +1340,7 @@ function TeamManager({ team, setTeam, showToast }) {
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => handleDelete(member.id)}
+                  onClick={() => handleDelete(member._id)}
                   className="w-8 h-8 rounded-lg bg-coral/10 text-coral flex items-center justify-center hover:bg-coral hover:text-cream transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -677,7 +1356,9 @@ function TeamManager({ team, setTeam, showToast }) {
 
 // ─── Events Manager ───────────────────────────────────────────────────────
 
-function EventsManager({ events, setEvents, showToast }) {
+function EventsManager({ showToast }) {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
   const emptyForm = {
     title: "",
     date: "",
@@ -692,65 +1373,85 @@ function EventsManager({ events, setEvents, showToast }) {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
 
-  const commit = (updated) => {
-    setEvents(updated);
-    saveJSON(STORAGE_KEYS.events, updated);
+  const load = () => {
+    setLoading(true);
+    getEvents()
+      .then(setEvents)
+      .catch(() => showToast("Failed to load events"))
+      .finally(() => setLoading(false));
   };
+  useEffect(load, []);
 
   const openAdd = () => {
     setForm(emptyForm);
     setEditingId(null);
     setFormOpen(true);
   };
-
   const openEdit = (event) => {
     setForm({ ...emptyForm, ...event });
-    setEditingId(event.id);
+    setEditingId(event._id);
     setFormOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.title.trim() || !form.date.trim()) return;
-    if (editingId) {
-      commit(events.map((e) => (e.id === editingId ? { ...e, ...form } : e)));
-      showToast("Event updated");
-    } else {
-      commit([...events, { id: genId(), ...form }]);
-      showToast("Event added");
+    try {
+      if (editingId) {
+        await updateEvent(editingId, form);
+        showToast("Event updated on the website");
+      } else {
+        await createEvent(form);
+        showToast("Event added to the website");
+      }
+      setFormOpen(false);
+      load();
+    } catch (err) {
+      showToast(err.message || "Failed to save event");
     }
-    setFormOpen(false);
   };
 
-  const handleDelete = (id) => {
-    commit(events.filter((e) => e.id !== id));
-    showToast("Event removed");
+  const handleDelete = async (id) => {
+    try {
+      await deleteEvent(id);
+      setEvents((prev) => prev.filter((e) => e._id !== id));
+      showToast("Event removed");
+    } catch (err) {
+      showToast(err.message || "Failed to remove event");
+    }
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-charcoal">Events Management</h2>
-          <p className="text-charcoal/55 text-sm mt-1">Manage the "Upcoming Events" shown on the Homepage.</p>
+          <h2 className="font-display font-bold text-2xl text-charcoal">
+            Events Management
+          </h2>
+          <p className="text-charcoal/55 text-sm mt-1">
+            Changes here appear in "Upcoming Events" on the Homepage.
+          </p>
         </div>
         <button
           onClick={openAdd}
           className="px-5 py-2.5 rounded-xl bg-coral text-cream font-semibold text-sm shadow-md hover:bg-coral-dark transition-colors flex items-center gap-2 whitespace-nowrap"
         >
-          <Plus className="w-4 h-4" />
-          Add Event
+          <Plus className="w-4 h-4" /> Add Event
         </button>
       </div>
 
       {formOpen && (
         <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-charcoal/5 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <p className="font-semibold text-charcoal">{editingId ? "Edit Event" : "New Event"}</p>
-            <button onClick={() => setFormOpen(false)} className="text-charcoal/40 hover:text-charcoal">
+            <p className="font-semibold text-charcoal">
+              {editingId ? "Edit Event" : "New Event"}
+            </p>
+            <button
+              onClick={() => setFormOpen(false)}
+              className="text-charcoal/40 hover:text-charcoal"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
-
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className={labelCls}>Event Title</label>
@@ -773,7 +1474,6 @@ function EventsManager({ events, setEvents, showToast }) {
               />
             </div>
           </div>
-
           <div className="mb-4">
             <label className={labelCls}>Location</label>
             <input
@@ -784,7 +1484,6 @@ function EventsManager({ events, setEvents, showToast }) {
               placeholder="e.g. Surya Nagar, Ghaziabad"
             />
           </div>
-
           <div className="mb-4">
             <label className={labelCls}>Description</label>
             <textarea
@@ -792,21 +1491,16 @@ function EventsManager({ events, setEvents, showToast }) {
               value={form.desc}
               onChange={(e) => setForm({ ...form, desc: e.target.value })}
               className={`${inputCls} resize-none`}
-              placeholder="Short description of the event"
+              placeholder="Short description"
             />
           </div>
-
           <div className="grid sm:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className={labelCls}>Cover Image URL</label>
-              <input
-                type="text"
-                value={form.image}
-                onChange={(e) => setForm({ ...form, image: e.target.value })}
-                className={inputCls}
-                placeholder="Image URL"
-              />
-            </div>
+            <ImageUploadField
+              label="Cover Image URL"
+              value={form.image}
+              onChange={(image) => setForm({ ...form, image })}
+              showToast={showToast}
+            />
             <div>
               <label className={labelCls}>Tag Label</label>
               <input
@@ -832,7 +1526,6 @@ function EventsManager({ events, setEvents, showToast }) {
               </select>
             </div>
           </div>
-
           <div className="mb-4 sm:w-1/3">
             <label className={labelCls}>Emoji Icon</label>
             <input
@@ -843,29 +1536,34 @@ function EventsManager({ events, setEvents, showToast }) {
               placeholder="e.g. 🩸"
             />
           </div>
-
           <button
             onClick={handleSave}
             className="px-6 py-2.5 rounded-xl bg-teal text-cream font-semibold text-sm shadow-md hover:scale-[1.02] transition-all flex items-center gap-2"
           >
-            <Save className="w-4 h-4" />
+            <Save className="w-4 h-4" />{" "}
             {editingId ? "Update Event" : "Save Event"}
           </button>
         </div>
       )}
 
-      {events.length === 0 ? (
+      {loading ? (
+        <p className="text-charcoal/40 text-sm">Loading events...</p>
+      ) : events.length === 0 ? (
         <EmptyState icon={Calendar} text="No events added yet." />
       ) : (
         <div className="grid sm:grid-cols-2 gap-5">
           {events.map((event) => (
             <div
-              key={event.id}
+              key={event._id}
               className="bg-white rounded-2xl overflow-hidden shadow-sm border border-charcoal/5 flex"
             >
               <div className="w-28 flex-shrink-0 bg-cream">
                 {event.image ? (
-                  <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
+                  <img
+                    src={event.image}
+                    alt={event.title}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-charcoal/25">
                     <Calendar className="w-6 h-6" />
@@ -874,7 +1572,9 @@ function EventsManager({ events, setEvents, showToast }) {
               </div>
               <div className="flex-1 p-4 min-w-0">
                 <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <span className={`${event.tagColor} text-cream text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full`}>
+                  <span
+                    className={`${event.tagColor} text-cream text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full`}
+                  >
                     {event.tag}
                   </span>
                   <div className="flex gap-1.5 flex-shrink-0">
@@ -885,14 +1585,16 @@ function EventsManager({ events, setEvents, showToast }) {
                       <Pencil className="w-3 h-3" />
                     </button>
                     <button
-                      onClick={() => handleDelete(event.id)}
+                      onClick={() => handleDelete(event._id)}
                       className="w-7 h-7 rounded-lg bg-coral/10 text-coral flex items-center justify-center hover:bg-coral hover:text-cream transition-colors"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
-                <p className="font-display font-bold text-charcoal text-sm truncate">{event.title}</p>
+                <p className="font-display font-bold text-charcoal text-sm truncate">
+                  {event.title}
+                </p>
                 <p className="text-charcoal/55 text-xs mt-1 flex items-center gap-1">
                   <Calendar className="w-3 h-3" /> {event.date}
                 </p>
@@ -910,11 +1612,11 @@ function EventsManager({ events, setEvents, showToast }) {
 
 // ─── Initiative Content Manager ───────────────────────────────────────────
 
-function ContentManager({ content, setContent, showToast }) {
-  const editableInitiatives = INITIATIVES.filter((i) => i.key !== "home");
+function ContentManager({ showToast }) {
+  const editableInitiatives = ADMIN_INITIATIVES.filter((i) => i.key !== "home");
   const [selected, setSelected] = useState(editableInitiatives[0].key);
-
-  const data = content[selected] || {
+  const [loading, setLoading] = useState(true);
+  const emptyForm = {
     heroTitle: "",
     heroTagline: "",
     aboutText: "",
@@ -922,35 +1624,36 @@ function ContentManager({ content, setContent, showToast }) {
     ctaBody: "",
     ctaButtonLabel: "",
   };
-
-  const [form, setForm] = useState(data);
+  const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
-    setForm(
-      content[selected] || {
-        heroTitle: "",
-        heroTagline: "",
-        aboutText: "",
-        ctaTitle: "",
-        ctaBody: "",
-        ctaButtonLabel: "",
-      },
-    );
-  }, [selected]); // eslint-disable-line react-hooks/exhaustive-deps
+    setLoading(true);
+    getContent(selected)
+      .then((data) => setForm(data || emptyForm))
+      .catch(() => setForm(emptyForm))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
 
-  const handleSave = () => {
-    const updated = { ...content, [selected]: form };
-    setContent(updated);
-    saveJSON(STORAGE_KEYS.content, updated);
-    showToast("Initiative content saved");
+  const handleSave = async () => {
+    try {
+      await updateContent(selected, form);
+      showToast("Initiative content saved — now live on the website");
+    } catch (err) {
+      showToast(err.message || "Failed to save content");
+    }
   };
 
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-charcoal">Initiative Content Management</h2>
-          <p className="text-charcoal/55 text-sm mt-1">Edit hero, about, and CTA text for each initiative page.</p>
+          <h2 className="font-display font-bold text-2xl text-charcoal">
+            Initiative Content Management
+          </h2>
+          <p className="text-charcoal/55 text-sm mt-1">
+            Edit hero, about, and CTA text for each initiative page.
+          </p>
         </div>
         <select
           value={selected}
@@ -965,97 +1668,110 @@ function ContentManager({ content, setContent, showToast }) {
         </select>
       </div>
 
-      <div className="bg-white rounded-2xl p-5 md:p-8 shadow-sm border border-charcoal/5 space-y-6">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-coral mb-4">Hero Section</p>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>Hero Title</label>
-              <input
-                type="text"
-                value={form.heroTitle}
-                onChange={(e) => setForm({ ...form, heroTitle: e.target.value })}
-                className={inputCls}
-                placeholder="e.g. Blood Donation & Healthcare"
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Hero Tagline</label>
-              <input
-                type="text"
-                value={form.heroTagline}
-                onChange={(e) => setForm({ ...form, heroTagline: e.target.value })}
-                className={inputCls}
-                placeholder="e.g. Saving Lives Through Voluntary Blood Donation"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="h-px bg-charcoal/8" />
-
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-teal mb-4">About Section</p>
-          <label className={labelCls}>About Paragraphs (one per line)</label>
-          <textarea
-            rows={6}
-            value={form.aboutText}
-            onChange={(e) => setForm({ ...form, aboutText: e.target.value })}
-            className={`${inputCls} resize-none`}
-            placeholder="Write each paragraph on a new line..."
-          />
-        </div>
-
-        <div className="h-px bg-charcoal/8" />
-
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-gold mb-4">Call To Action</p>
-          <div className="grid sm:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className={labelCls}>CTA Title</label>
-              <input
-                type="text"
-                value={form.ctaTitle}
-                onChange={(e) => setForm({ ...form, ctaTitle: e.target.value })}
-                className={inputCls}
-                placeholder="e.g. Become a Blood Donor"
-              />
-            </div>
-            <div>
-              <label className={labelCls}>CTA Button Label</label>
-              <input
-                type="text"
-                value={form.ctaButtonLabel}
-                onChange={(e) => setForm({ ...form, ctaButtonLabel: e.target.value })}
-                className={inputCls}
-                placeholder="e.g. Register as a Blood Donor"
-              />
-            </div>
-          </div>
+      {loading ? (
+        <p className="text-charcoal/40 text-sm">Loading content...</p>
+      ) : (
+        <div className="bg-white rounded-2xl p-5 md:p-8 shadow-sm border border-charcoal/5 space-y-6">
           <div>
-            <label className={labelCls}>CTA Body Text</label>
+            <p className="text-xs font-bold uppercase tracking-wider text-coral mb-4">
+              Hero Section
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Hero Title</label>
+                <input
+                  type="text"
+                  value={form.heroTitle}
+                  onChange={(e) =>
+                    setForm({ ...form, heroTitle: e.target.value })
+                  }
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Hero Tagline</label>
+                <input
+                  type="text"
+                  value={form.heroTagline}
+                  onChange={(e) =>
+                    setForm({ ...form, heroTagline: e.target.value })
+                  }
+                  className={inputCls}
+                />
+              </div>
+            </div>
+            {/* <div className="mt-4">
+              <ImageUploadField
+                label="Hero Image URL"
+                value={form.heroImage}
+                onChange={(heroImage) => setForm({ ...form, heroImage })}
+                showToast={showToast}
+              />
+            </div> */}
+          </div>
+          <div className="h-px bg-charcoal/8" />
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-teal mb-4">
+              About Section
+            </p>
+            <label className={labelCls}>About Paragraphs (one per line)</label>
             <textarea
-              rows={2}
-              value={form.ctaBody}
-              onChange={(e) => setForm({ ...form, ctaBody: e.target.value })}
+              rows={6}
+              value={form.aboutText}
+              onChange={(e) => setForm({ ...form, aboutText: e.target.value })}
               className={`${inputCls} resize-none`}
-              placeholder="Short supporting text for the CTA section"
             />
           </div>
+          <div className="h-px bg-charcoal/8" />
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-gold mb-4">
+              Call To Action
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className={labelCls}>CTA Title</label>
+                <input
+                  type="text"
+                  value={form.ctaTitle}
+                  onChange={(e) =>
+                    setForm({ ...form, ctaTitle: e.target.value })
+                  }
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>CTA Button Label</label>
+                <input
+                  type="text"
+                  value={form.ctaButtonLabel}
+                  onChange={(e) =>
+                    setForm({ ...form, ctaButtonLabel: e.target.value })
+                  }
+                  className={inputCls}
+                />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>CTA Body Text</label>
+              <textarea
+                rows={2}
+                value={form.ctaBody}
+                onChange={(e) => setForm({ ...form, ctaBody: e.target.value })}
+                className={`${inputCls} resize-none`}
+              />
+            </div>
+          </div>
+          <button
+            onClick={handleSave}
+            className="px-7 py-3 rounded-full bg-coral text-cream font-semibold text-sm shadow-lg shadow-coral/30 hover:bg-coral-dark hover:scale-[1.02] transition-all flex items-center gap-2"
+          >
+            <Save className="w-4 h-4" /> Save Changes
+          </button>
         </div>
-
-        <button
-          onClick={handleSave}
-          className="px-7 py-3 rounded-full bg-coral text-cream font-semibold text-sm shadow-lg shadow-coral/30 hover:bg-coral-dark hover:scale-[1.02] transition-all flex items-center gap-2"
-        >
-          <Save className="w-4 h-4" />
-          Save Changes
-        </button>
-      </div>
+      )}
     </div>
   );
 }
-
 // ─── Empty State ──────────────────────────────────────────────────────────
 
 function EmptyState({ icon: Icon, text }) {
@@ -1070,22 +1786,10 @@ function EmptyState({ icon: Icon, text }) {
 }
 
 // ─── Main Dashboard Shell ─────────────────────────────────────────────────
-
 function AdminDashboard({ onLogout }) {
   const [active, setActive] = useState("dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [toast, showToast] = useToast();
-
-  const [gallery, setGallery] = useState(() =>
-    loadJSON(
-      STORAGE_KEYS.gallery,
-      INITIATIVES.reduce((acc, i) => ({ ...acc, [i.key]: [] }), {}),
-    ),
-  );
-  const [team, setTeam] = useState(() => loadJSON(STORAGE_KEYS.team, []));
-  const [events, setEvents] = useState(() => loadJSON(STORAGE_KEYS.events, []));
-  const [content, setContent] = useState(() => loadJSON(STORAGE_KEYS.content, {}));
-
   const activeLabel = NAV_ITEMS.find((n) => n.key === active)?.label || "";
 
   return (
@@ -1097,9 +1801,7 @@ function AdminDashboard({ onLogout }) {
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
       />
-
       <div className="md:ml-64">
-        {/* Topbar */}
         <div className="sticky top-0 z-20 bg-white/90 backdrop-blur-sm border-b border-charcoal/5 px-5 md:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -1108,44 +1810,37 @@ function AdminDashboard({ onLogout }) {
             >
               <Menu className="w-5 h-5" />
             </button>
-            <p className="font-display font-bold text-charcoal">{activeLabel}</p>
+            <p className="font-display font-bold text-charcoal">
+              {activeLabel}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-teal flex items-center justify-center text-cream font-semibold text-sm">
               A
             </div>
-            <span className="hidden sm:inline text-sm font-medium text-charcoal/70">Admin</span>
+            <span className="hidden sm:inline text-sm font-medium text-charcoal/70">
+              Admin
+            </span>
           </div>
         </div>
-
         <main className="p-5 md:p-8">
-          {active === "dashboard" && (
-            <DashboardOverview gallery={gallery} team={team} events={events} setActive={setActive} />
-          )}
-          {active === "gallery" && (
-            <GalleryManager gallery={gallery} setGallery={setGallery} showToast={showToast} />
-          )}
-          {active === "team" && (
-            <TeamManager team={team} setTeam={setTeam} showToast={showToast} />
-          )}
-          {active === "events" && (
-            <EventsManager events={events} setEvents={setEvents} showToast={showToast} />
-          )}
-          {active === "content" && (
-            <ContentManager content={content} setContent={setContent} showToast={showToast} />
-          )}
+          {active === "dashboard" && <DashboardOverview setActive={setActive} />}
+          {active === "gallery" && <GalleryManager showToast={showToast} />}
+          {active === "hero" && <HeroImagesManager showToast={showToast} />}
+          {active === "team" && <TeamManager showToast={showToast} />}
+          {active === "events" && <EventsManager showToast={showToast} />}
+          {active === "content" && <ContentManager showToast={showToast} />}
+          {active === "volunteers" && <VolunteersManager showToast={showToast} />}
+          {active === "donors" && <BloodDonorsManager showToast={showToast} />}
         </main>
       </div>
-
       <Toast message={toast} />
     </div>
   );
 }
 
-// ─── Entry Point ──────────────────────────────────────────────────────────
-
 export default function AdminPanel() {
-  const [authed, setAuthed] = useState(() => loadJSON(STORAGE_KEYS.auth, false));
+  const [authed, setAuthed] = useState(isLoggedIn());
 
   if (!authed) {
     return <AdminLogin onSuccess={() => setAuthed(true)} />;
@@ -1154,7 +1849,7 @@ export default function AdminPanel() {
   return (
     <AdminDashboard
       onLogout={() => {
-        saveJSON(STORAGE_KEYS.auth, false);
+        clearToken();
         setAuthed(false);
       }}
     />

@@ -2,29 +2,33 @@
  * SeniorCitizen.jsx
  * Route: /initiatives/senior-citizen
  */
+
 import { Users, Heart, ShieldCheck, Stethoscope, HandHeart, Megaphone, Home } from "lucide-react";
 import { InitiativePage } from "./shared";
+import { useGallery, useInitiativeContent } from "../../hooks/useSiteData";
+import { useHeroSlides } from "../../hooks/useSiteData";
 
 import heroImg1 from "../../assets/senior-citizen/senior-9.jpg";
 import heroImg2 from "../../assets/senior-citizen/senior-4.jpg";
 import heroImg3 from "../../assets/senior-citizen/senior-3.jpg";
 import heroImg4 from "../../assets/senior-citizen/senior-1.jpg";
+import aboutImg from "../../assets/senior-citizen/senior-5.jpg";
 
-import g1 from "../../assets/senior-citizen/senior-10.jpg";
-import g2 from "../../assets/senior-citizen/senior-6.jpg";
-import g3 from "../../assets/senior-citizen/senior-7.jpg";
-import g4 from "../../assets/senior-citizen/senior-8.jpg";
-import g5 from "../../assets/senior-citizen/senior-9.jpg";
-import g6 from "../../assets/senior-citizen/senior-3.jpg";
-import g7 from "../../assets/senior-citizen/senior-11.jpg";
-import g8 from "../../assets/senior-citizen/senior-12.JPG";
-import g9 from "../../assets/senior-citizen/senior-13.JPG";
-import g10 from "../../assets/senior-citizen/senior-14.JPG";
-import g11 from "../../assets/senior-citizen/senior-15.JPG";
-import g12 from "../../assets/senior-citizen/senior-2.jpg";
+const SLUG = "senior-citizen";
 
+const DEFAULT_CONTENT = {
+  heroTitle: "Senior Citizen Welfare",
+  heroTagline: "Caring for Those Who Once Cared for Us",
+  aboutText:
+    "Senior citizens deserve respect, care and a life filled with dignity. Through our Senior Citizen Welfare initiative, DMS AAROHI organizes activities that promote health, emotional well-being and social engagement.\nDMS AAROHI conducts health check-up camps, recreational activities, and community gatherings to help senior citizens remain active, connected, and engaged with society.\nBeyond meeting physical needs, our initiative focuses on providing emotional support and companionship to reduce loneliness and isolation among the elderly. Our mission is to ensure that every senior citizen experiences care, respect, and a sense of belonging in their later years.\nWe strive to create a supportive environment where elderly individuals feel valued and cared for.",
+  ctaTitle: "Support Our Senior Citizens",
+  ctaBody:
+    "Join us in bringing care, respect, and happiness to our elders. Volunteer your time or donate to make a real difference in their lives.",
+  ctaButtonLabel: "Become a Volunteer",
+  aboutImage: "",
+};
 
-const HERO_SLIDES = [
+const DEFAULT_HERO_SLIDES = [
   {
     image: heroImg1,
     title: "Caring for Those Who Cared for Us",
@@ -46,13 +50,8 @@ const HERO_SLIDES = [
     subtitle: "Empowering elders with the support, joy and social connection they deserve.",
   },
 ];
-
-const ABOUT_TEXT = [
-  "Senior citizens deserve respect, care and a life filled with dignity. Through our Senior Citizen Welfare initiative, DMS AAROHI organizes activities that promote health, emotional well-being and social engagement.",
-  "DMS AAROHI conducts health check-up camps, recreational activities, and community gatherings to help senior citizens remain active, connected, and engaged with society.",
-  "Beyond meeting physical needs, our initiative focuses on providing emotional support and companionship to reduce loneliness and isolation among the elderly. Our mission is to ensure that every senior citizen experiences care, respect, and a sense of belonging in their later years.",
-  "We strive to create a supportive environment where elderly individuals feel valued and cared for.",
-];
+ 
+const DEFAULT_ABOUT_IMAGE = aboutImg;
 
 const ABOUT_BADGES = [
   { icon: Heart, label: "Health Check-up Camps", sub: "Free medical & wellness" },
@@ -122,25 +121,35 @@ const SOCIAL_IMPACT = {
 };
 
 export default function SeniorCitizen() {
+  const { images: galleryImages } = useGallery(SLUG);
+  const { content } = useInitiativeContent(SLUG, DEFAULT_CONTENT);
+  const { slides: fetchedSlides } = useHeroSlides(SLUG);
+
+  const heroSlides =
+    fetchedSlides.length > 0
+      ? fetchedSlides.map((s) => ({ image: s.image, title: s.title, subtitle: s.subtitle }))
+      : DEFAULT_HERO_SLIDES;
+
+  const aboutImage = content.aboutImage || DEFAULT_ABOUT_IMAGE;
+
   return (
     <InitiativePage
-      heroSlides={HERO_SLIDES}
-      heroTitle="Senior Citizen Welfare"
-      heroTagline="Caring for Those Who Once Cared for Us"
+      heroSlides={heroSlides}
+      heroTitle={content.heroTitle}
+      heroTagline={content.heroTagline}
       accentColor="bg-teal"
       accentText="text-teal"
-      aboutText={ABOUT_TEXT}
-      aboutImage={g10}
+      aboutText={content.aboutText.split("\n")}
+      aboutImage={aboutImage}
       aboutBadges={ABOUT_BADGES}
       activities={ACTIVITIES}
-      galleryImages={[g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12]}
+      galleryImages={galleryImages.map((img) => img.url)}
       statsRow={STATS}
-      ctaTitle="Support Our Senior Citizens"
-      ctaBody="Join us in bringing care, respect, and happiness to our elders. Volunteer your time or donate to make a real difference in their lives."
-      ctaButtonLabel="Become a Volunteer"
+      ctaTitle={content.ctaTitle}
+      ctaBody={content.ctaBody}
+      ctaButtonLabel={content.ctaButtonLabel}
       ctaButtonHref="/#contact"
-      ctaSideImage={g5}
-      statsRow={STATS}
+      ctaSideImage={heroImg2}
       socialImpact={SOCIAL_IMPACT}
       icon={Users}
     />

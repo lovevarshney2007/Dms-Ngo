@@ -5,27 +5,30 @@
 
 import { Shirt, Heart, Users, Snowflake, HandHeart, Package, ShoppingBag } from "lucide-react";
 import { InitiativePage } from "./shared";
+import { useGallery, useInitiativeContent } from "../../hooks/useSiteData";
+import { useHeroSlides } from "../../hooks/useSiteData";
 
 import heroImg1 from "../../assets/hero/clothes-donation.jpeg";
 import heroImg2 from "../../assets/cloth-donation/cloth-2.jpg";
 import heroImg3 from "../../assets/cloth-donation/cloth-1.jpg";
 import heroImg4 from "../../assets/cloth-donation/cloth-3.jpg";
+import aboutImg from "../../assets/cloth-donation/cloth-4.jpg";
 
-import g1 from "../../assets/cloth-donation/cloth-4.jpg";
-import g2 from "../../assets/cloth-donation/cloth-5.jpg";
-import g3 from "../../assets/cloth-donation/cloth-6.jpg";
-import g4 from "../../assets/cloth-donation/cloth-8.jpg";
-import g5 from "../../assets/cloth-donation/cloth-10.jpg";
-import g6 from "../../assets/cloth-donation/cloth-12.jpg";
-import g7 from "../../assets/cloth-donation/cloth-13.jpg";
-import g8 from "../../assets/cloth-donation/cloth-14.JPG";
-import g9 from "../../assets/cloth-donation/cloth-15.jpg";
-import g10 from "../../assets/cloth-donation/cloth-9.jpg";
-import g11 from "../../assets/cloth-donation/cloth-11.jpg";
-import g12 from "../../assets/cloth-donation/cloth-8.jpg"
+const SLUG = "cloth-distribution";
 
+const DEFAULT_CONTENT = {
+  heroTitle: "Cloth Distribution",
+  heroTagline: "Sharing Warmth, Spreading Kindness",
+  aboutText:
+    "Many families struggle to meet basic clothing needs throughout the year. Our Cloth Distribution initiative collects and distributes clean, usable clothes to underprivileged families, helping them live with dignity and comfort.\nThrough donation drives and community support, DMS AAROHI collects clothing for people of all ages, ensuring that children, women, and elderly individuals receive essential garments suited to their needs.\nBeyond providing clothing, this initiative aims to restore dignity and confidence to those facing difficult circumstances. By encouraging the spirit of sharing and compassion, we strive to build a community where no one is left without warmth, comfort, and care.\nEvery donation brings warmth, hope, and happiness to someone in need.",
+  ctaTitle: "Donate Clothes Today",
+  ctaBody:
+    "Your unused clothes can make a meaningful difference in someone's life. Drop off donations or join our next collection drive.",
+  ctaButtonLabel: "Donate Clothes",
+  aboutImage: "",
+};
 
-const HERO_SLIDES = [
+const DEFAULT_HERO_SLIDES = [
   {
     image: heroImg1,
     title: "Warmth That Reaches Far",
@@ -48,12 +51,7 @@ const HERO_SLIDES = [
   },
 ];
 
-const ABOUT_TEXT = [
-  "Many families struggle to meet basic clothing needs throughout the year. Our Cloth Distribution initiative collects and distributes clean, usable clothes to underprivileged families, helping them live with dignity and comfort.",
-  "Through donation drives and community support, DMS AAROHI collects clothing for people of all ages, ensuring that children, women, and elderly individuals receive essential garments suited to their needs.",
-  "Beyond providing clothing, this initiative aims to restore dignity and confidence to those facing difficult circumstances. By encouraging the spirit of sharing and compassion, we strive to build a community where no one is left without warmth, comfort, and care.",
-  "Every donation brings warmth, hope, and happiness to someone in need.",
-];
+const DEFAULT_ABOUT_IMAGE = aboutImg;
 
 const ABOUT_BADGES = [
   { icon: Shirt, label: "10,000+ Garments", sub: "Collected & distributed" },
@@ -123,25 +121,35 @@ const SOCIAL_IMPACT = {
 };
 
 export default function ClothDistribution() {
+  const { images: galleryImages } = useGallery(SLUG);
+  const { content } = useInitiativeContent(SLUG, DEFAULT_CONTENT);
+  const { slides: fetchedSlides } = useHeroSlides(SLUG);
+
+  const heroSlides =
+    fetchedSlides.length > 0
+      ? fetchedSlides.map((s) => ({ image: s.image, title: s.title, subtitle: s.subtitle }))
+      : DEFAULT_HERO_SLIDES;
+
+  const aboutImage = content.aboutImage || DEFAULT_ABOUT_IMAGE;
+
   return (
     <InitiativePage
-      heroSlides={HERO_SLIDES}
-      heroTitle="Cloth Distribution"
-      heroTagline="Sharing Warmth, Spreading Kindness"
+      heroSlides={heroSlides}
+      heroTitle={content.heroTitle}
+      heroTagline={content.heroTagline}
       accentColor="bg-coral"
       accentText="text-coral"
-      aboutText={ABOUT_TEXT}
-      aboutImage={g9}
+      aboutText={content.aboutText.split("\n")}
+      aboutImage={aboutImage}
       aboutBadges={ABOUT_BADGES}
       activities={ACTIVITIES}
-      galleryImages={[g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12,]}
+      galleryImages={galleryImages.map((img) => img.url)}
       statsRow={STATS}
-      ctaTitle="Donate Clothes Today"
-      ctaBody="Your unused clothes can make a meaningful difference in someone's life. Drop off donations or join our next collection drive."
-      ctaButtonLabel="Donate Clothes"
+      ctaTitle={content.ctaTitle}
+      ctaBody={content.ctaBody}
+      ctaButtonLabel={content.ctaButtonLabel}
       ctaButtonHref="/#contact"
       ctaSideImage={heroImg1}
-      statsRow={STATS}
       socialImpact={SOCIAL_IMPACT}
       icon={Shirt}
     />

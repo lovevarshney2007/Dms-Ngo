@@ -39,6 +39,7 @@ import {
   StethoscopeIcon,
 } from "lucide-react";
 import logo from "../../assets/logo.png";
+import { submitBloodDonor } from "../../lib/api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -142,6 +143,22 @@ export function Reveal({ children, className = "", delay = 0 }) {
 }
 
 export function BloodDonorModal({ isOpen, onClose }) {
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    age: "",
+    bloodGroup: "",
+    weight: "",
+    city: "",
+    lastDonationDate: "",
+    preferredCamp: "",
+    notes: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
     return () => {
@@ -157,7 +174,43 @@ export function BloodDonorModal({ isOpen, onClose }) {
     return () => window.removeEventListener("keydown", handleEsc);
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setSubmitted(false);
+      setError("");
+      setForm({
+        name: "",
+        phone: "",
+        email: "",
+        age: "",
+        bloodGroup: "",
+        weight: "",
+        city: "",
+        lastDonationDate: "",
+        preferredCamp: "",
+        notes: "",
+      });
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const set = (field) => (e) =>
+    setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      await submitBloodDonor(form);
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const BLOOD_FACTS = [
     { icon: HeartPulseIcon, text: "One donation can save up to 3 lives" },
@@ -177,7 +230,6 @@ export function BloodDonorModal({ isOpen, onClose }) {
         onClick={(e) => e.stopPropagation()}
         className="relative w-full md:w-[68vw] max-w-5xl max-h-[92vh] bg-cream rounded-[28px] md:rounded-[32px] shadow-2xl overflow-hidden grid md:grid-cols-[42%_58%]"
       >
-        {/* Close button */}
         <button
           onClick={onClose}
           aria-label="Close blood donor form"
@@ -186,13 +238,12 @@ export function BloodDonorModal({ isOpen, onClose }) {
           <XIcon className="w-5 h-5" />
         </button>
 
-        {/* ── LEFT: Animated visual panel ── */}
+        {/* LEFT panel — unchanged */}
         <div className="relative hidden md:flex flex-col justify-between overflow-hidden bg-gradient-to-br from-coral/15 via-cream to-red-100/40 p-8 lg:p-10">
           <div className="absolute -top-16 -left-16 w-56 h-56 bg-coral/20 rounded-full blur-2xl" />
           <div className="absolute bottom-0 -right-10 w-64 h-64 bg-red-200/30 rounded-full blur-2xl" />
           <div className="absolute top-1/3 right-0 w-24 h-24 border-2 border-coral/30 rounded-full" />
 
-          {/* Animated droplet composition */}
           <div className="relative flex-1 flex items-center justify-center">
             <div className="relative w-52 h-52 lg:w-60 lg:h-60 flex items-center justify-center">
               <span className="absolute inset-0 rounded-full bg-coral/20 animate-ping-slow" />
@@ -204,7 +255,6 @@ export function BloodDonorModal({ isOpen, onClose }) {
                   fillOpacity={0.12}
                 />
               </span>
-
               <div className="absolute -top-2 -left-4 w-14 h-14 rounded-2xl bg-white shadow-lg flex items-center justify-center animate-float">
                 <HeartPulseIcon className="w-6 h-6 text-coral" />
               </div>
@@ -249,7 +299,7 @@ export function BloodDonorModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        {/* ── RIGHT: Form panel (scrollbar hidden) ── */}
+        {/* RIGHT panel */}
         <div className="relative bg-white overflow-y-auto max-h-[92vh] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none]">
           <div className="md:hidden bg-gradient-to-br from-coral/15 to-red-100/40 px-6 pt-8 pb-6">
             <div className="w-14 h-14 rounded-2xl bg-white shadow-md flex items-center justify-center mb-4">
@@ -263,179 +313,220 @@ export function BloodDonorModal({ isOpen, onClose }) {
             </h3>
           </div>
 
-          <div className="px-6 py-7 md:px-9 md:py-10">
-            <div className="hidden md:block mb-6">
-              <span className="inline-block text-coral font-semibold uppercase tracking-[0.2em] text-xs mb-2">
-                Donor Registration
-              </span>
-              <h3 className="font-display font-bold text-[26px] text-charcoal leading-tight">
-                Join our verified donor network
+          {submitted ? (
+            <div className="px-6 py-14 md:px-9 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-coral/10 flex items-center justify-center mb-5">
+                <DropletIcon className="w-8 h-8 text-coral" />
+              </div>
+              <h3 className="font-display font-bold text-2xl text-charcoal mb-2">
+                Thank you, {form.name.split(" ")[0]}!
               </h3>
-              <p className="text-charcoal/55 text-sm mt-1.5">
-                Fields marked * are required — everything else is optional.
+              <p className="text-charcoal/60 text-sm max-w-sm mb-8">
+                You're now part of our verified donor network. Our team will
+                verify and contact you within 24–48 hours.
               </p>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                onClose();
-              }}
-            >
-              {/* Required section */}
-              <div className="grid sm:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Your name"
-                    className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="+91 00000 00000"
-                    className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
-                  />
-                </div>
-              </div>
-
-              <div className="mb-5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="you@example.com"
-                  className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
-                />
-              </div>
-
-              <div className="h-px bg-charcoal/8 mb-5" />
-              <p className="text-xs font-semibold uppercase tracking-wider text-charcoal/35 mb-4">
-                Optional details — help us match you to a camp
-              </p>
-
-              <div className="grid sm:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
-                    Age
-                  </label>
-                  <input
-                    type="number"
-                    min="18"
-                    placeholder="Your age"
-                    className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
-                    Blood Group
-                  </label>
-                  <select
-                    defaultValue=""
-                    className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal"
-                  >
-                    <option value="" disabled>
-                      Select blood group
-                    </option>
-                    {[
-                      "A+",
-                      "A-",
-                      "B+",
-                      "B-",
-                      "O+",
-                      "O-",
-                      "AB+",
-                      "AB-",
-                      "Not sure",
-                    ].map((bg) => (
-                      <option key={bg} value={bg}>
-                        {bg}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
-                    Weight (kg)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="e.g. 60"
-                    className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Your city"
-                    className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
-                  />
-                </div>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
-                    Last Donation Date
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
-                    Preferred Camp Location
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Nearest area / camp"
-                    className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
-                  />
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
-                  Medical Conditions / Notes
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Any allergies, medications, or health notes we should know..."
-                  className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30 resize-none"
-                />
-              </div>
-
               <button
-                type="submit"
-                className="group w-full px-8 py-3.5 rounded-full bg-gradient-to-r from-coral to-red-500 text-cream font-bold shadow-lg shadow-coral/30 hover:shadow-xl hover:shadow-coral/40 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
+                onClick={onClose}
+                className="px-8 py-3 rounded-full bg-coral text-cream font-semibold shadow-lg shadow-coral/30 hover:scale-105 active:scale-95 transition-all duration-200"
               >
-                Register as Donor
-                <DropletIcon className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+                Close
               </button>
-              <p className="text-center text-xs text-charcoal/40 mt-3">
-                Our team will verify and contact you within 24–48 hours.
-              </p>
-            </form>
-          </div>
+            </div>
+          ) : (
+            <div className="px-6 py-7 md:px-9 md:py-10">
+              <div className="hidden md:block mb-6">
+                <span className="inline-block text-coral font-semibold uppercase tracking-[0.2em] text-xs mb-2">
+                  Donor Registration
+                </span>
+                <h3 className="font-display font-bold text-[26px] text-charcoal leading-tight">
+                  Join our verified donor network
+                </h3>
+                <p className="text-charcoal/55 text-sm mt-1.5">
+                  Fields marked * are required — everything else is optional.
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit}>
+                <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={form.name}
+                      onChange={set("name")}
+                      placeholder="Your name"
+                      className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
+                      Phone Number *
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={form.phone}
+                      onChange={set("phone")}
+                      placeholder="+91 00000 00000"
+                      className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
+                      Blood Group
+                    </label>
+                    <select
+                      value={form.bloodGroup}
+                      onChange={set("bloodGroup")}
+                      className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal"
+                    >
+                      <option value="">Select blood group</option>
+                      {[
+                        "A+",
+                        "A-",
+                        "B+",
+                        "B-",
+                        "O+",
+                        "O-",
+                        "AB+",
+                        "AB-",
+                        "Not sure",
+                      ].map((bg) => (
+                        <option key={bg} value={bg}>
+                          {bg}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      value={form.city}
+                      onChange={set("city")}
+                      placeholder="Your city"
+                      className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={form.email}
+                    onChange={set("email")}
+                    placeholder="you@example.com"
+                    className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
+                  />
+                </div>
+
+                <div className="h-px bg-charcoal/8 mb-5" />
+                <p className="text-xs font-semibold uppercase tracking-wider text-charcoal/35 mb-4">
+                  Optional details — help us match you to a camp
+                </p>
+
+                <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
+                      Age
+                    </label>
+                    <input
+                      type="number"
+                      min="18"
+                      value={form.age}
+                      onChange={set("age")}
+                      placeholder="Your age"
+                      className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
+                      Weight (kg)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.weight}
+                      onChange={set("weight")}
+                      placeholder="e.g. 60"
+                      className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
+                      Last Donation Date
+                    </label>
+                    <input
+                      type="date"
+                      value={form.lastDonationDate}
+                      onChange={set("lastDonationDate")}
+                      className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
+                      Preferred Camp Location
+                    </label>
+                    <input
+                      type="text"
+                      value={form.preferredCamp}
+                      onChange={set("preferredCamp")}
+                      placeholder="Nearest area / camp"
+                      className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
+                    Medical Conditions / Notes
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={form.notes}
+                    onChange={set("notes")}
+                    placeholder="Any allergies, medications, or health notes we should know..."
+                    className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30 resize-none"
+                  />
+                </div>
+
+                {error && (
+                  <div className="mb-4 bg-coral/10 border border-coral/20 text-coral text-sm rounded-xl px-4 py-2.5">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="group w-full px-8 py-3.5 rounded-full bg-gradient-to-r from-coral to-red-500 text-cream font-bold shadow-lg shadow-coral/30 hover:shadow-xl hover:shadow-coral/40 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {submitting ? "Registering..." : "Register as Donor"}
+                  {!submitting && (
+                    <DropletIcon className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+                  )}
+                </button>
+                <p className="text-center text-xs text-charcoal/40 mt-3">
+                  Our team will verify and contact you within 24–48 hours.
+                </p>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -667,24 +758,6 @@ function VolunteerModal({ isOpen, onClose }) {
                   />
                 </div>
               </div>
-
-              <div className="mb-5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="you@example.com"
-                  className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
-                />
-              </div>
-
-              <div className="h-px bg-charcoal/8 mb-5" />
-              <p className="text-xs font-semibold uppercase tracking-wider text-charcoal/35 mb-4">
-                Optional details — help us match you better
-              </p>
-
               <div className="grid sm:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
@@ -708,6 +781,23 @@ function VolunteerModal({ isOpen, onClose }) {
                   />
                 </div>
               </div>
+
+              <div className="mb-5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/45 mb-1.5">
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="you@example.com"
+                  className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
+                />
+              </div>
+
+              <div className="h-px bg-charcoal/8 mb-5" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-charcoal/35 mb-4">
+                Optional details — help us match you better
+              </p>
 
               <div className="grid sm:grid-cols-2 gap-4 mb-4">
                 <div>
@@ -1148,11 +1238,16 @@ export function InitiativePage({
   // ── Hero slider state ──
   const [activeSlide, setActiveSlide] = useState(0);
   const [volunteerOpen, setVolunteerOpen] = useState(false);
-
   const slides =
     heroSlides.length > 0
       ? heroSlides
       : [{ image: aboutImage, title: heroTitle, subtitle: heroTagline }];
+
+  useEffect(() => {
+    if (activeSlide >= slides.length) {
+      setActiveSlide(0);
+    }
+  }, [slides.length, activeSlide]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -1164,6 +1259,10 @@ export function InitiativePage({
   const nextSlide = () => setActiveSlide((prev) => (prev + 1) % slides.length);
   const prevSlide = () =>
     setActiveSlide((prev) => (prev - 1 + slides.length) % slides.length);
+
+  // Defensive read — the render below runs before the clamp effect above
+  // has a chance to fire, so this guard is what actually prevents the crash.
+  const currentSlide = slides[activeSlide] || slides[0] || {};
 
   return (
     <div className="font-body text-charcoal bg-cream overflow-x-hidden">
@@ -1201,13 +1300,13 @@ export function InitiativePage({
             className="font-display font-bold text-4xl sm:text-5xl md:text-7xl text-cream leading-[1.05] max-w-3xl mb-5 animate-fade-in-up"
             style={{ animationDelay: "0.1s" }}
           >
-            {slides[activeSlide].title || heroTitle}
+            {currentSlide.title || heroTitle}
           </h1>
           <p
             className="text-lg md:text-2xl text-cream/85 max-w-2xl leading-relaxed font-medium animate-fade-in-up"
             style={{ animationDelay: "0.2s" }}
           >
-            {slides[activeSlide].subtitle || heroTagline}
+            {currentSlide.subtitle || heroTagline}
           </p>
           <div
             className="mt-8 flex flex-wrap gap-4 animate-fade-in-up"

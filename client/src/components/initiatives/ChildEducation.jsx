@@ -5,27 +5,30 @@
 
 import { GraduationCap, BookOpen, Star, Backpack, Lightbulb, Compass, Users, Laptop } from "lucide-react";
 import { InitiativePage } from "./shared";
+import { useGallery, useInitiativeContent } from "../../hooks/useSiteData";
+import { useHeroSlides } from "../../hooks/useSiteData";
 
 import heroImg1 from "../../assets/child-hero/child-1.jpg";
 import heroImg2 from "../../assets/child-hero/child-2.jpg";
 import heroImg3 from "../../assets/hero/child-education-1.jpg";
 import heroImg4 from "../../assets/child-hero/child-14.jpg";
+import aboutImg from "../../assets/child-hero/child-1.jpg";
 
-import g1 from "../../assets/child-hero/child-3.jpg";
-import g2 from "../../assets/child-hero/child-5.jpg";  
-import g3 from "../../assets/child-hero/child-6.jpg";
-import g4 from "../../assets/child-hero/child-7.JPG";
-import g5 from "../../assets/child-hero/child-8.JPG";
-import g6 from "../../assets/child-hero/child-9.JPG";
-import g7 from "../../assets/child-hero/child-10.JPG";
-import g8 from "../../assets/child-hero/child-11.JPG";
-import g9 from "../../assets/child-hero/child-12.JPG";
-import g10 from "../../assets/child-hero/child-13.jpg";
-import g11 from "../../assets/child-hero/child-14.jpg";
-import g12 from "../../assets/child-hero/child-15.JPG";
+const SLUG = "child-education";
 
+const DEFAULT_CONTENT = {
+  heroTitle: "Child Education",
+  heroTagline: "Empowering Children Through Education",
+  aboutText:
+    "Education is the foundation of a brighter future. Through our Child Education initiative, DMS AAROHI supports underprivileged children by providing learning opportunities, educational resources and guidance.\nWe organize educational support programs, distribute study materials, and assist children with access to quality learning resources that may otherwise be beyond their reach. By reducing barriers to education, we aim to ensure that every child has an equal opportunity to learn and grow.\nBeyond academics, DMS AAROHI encourages creativity, curiosity, and personal development through mentorship and community engagement activities.\nOur goal is to help every child develop the knowledge and confidence needed to build a successful future.",
+  ctaTitle: "Support a Child's Education",
+  ctaBody:
+    "Together, we can create opportunities that change a child's future. Your support — big or small — makes a real difference.",
+  ctaButtonLabel: "Support Education",
+  aboutImage: "",
+};
 
-const HERO_SLIDES = [
+const DEFAULT_HERO_SLIDES = [
   {
     image: heroImg1,
     title: "Educating Today, Empowering Tomorrow",
@@ -48,12 +51,7 @@ const HERO_SLIDES = [
   },
 ];
 
-const ABOUT_TEXT = [
-  "Education is the foundation of a brighter future. Through our Child Education initiative, DMS AAROHI supports underprivileged children by providing learning opportunities, educational resources and guidance.",
-  "We organize educational support programs, distribute study materials, and assist children with access to quality learning resources that may otherwise be beyond their reach. By reducing barriers to education, we aim to ensure that every child has an equal opportunity to learn and grow.",
-  "Beyond academics, DMS AAROHI encourages creativity, curiosity, and personal development through mentorship and community engagement activities.",
-  "Our goal is to help every child develop the knowledge and confidence needed to build a successful future.",
-];
+const DEFAULT_ABOUT_IMAGE = aboutImg;
 
 const ABOUT_BADGES = [
   { icon: BookOpen, label: "Learning Resources", sub: "Books, stationery & more" },
@@ -123,25 +121,35 @@ const SOCIAL_IMPACT = {
 };
 
 export default function ChildEducation() {
+  const { images: galleryImages } = useGallery(SLUG);
+  const { content } = useInitiativeContent(SLUG, DEFAULT_CONTENT);
+  const { slides: fetchedSlides } = useHeroSlides(SLUG);
+
+  const heroSlides =
+    fetchedSlides.length > 0
+      ? fetchedSlides.map((s) => ({ image: s.image, title: s.title, subtitle: s.subtitle }))
+      : DEFAULT_HERO_SLIDES;
+
+  const aboutImage = content.aboutImage || DEFAULT_ABOUT_IMAGE;
+
   return (
     <InitiativePage
-      heroSlides={HERO_SLIDES}
-      heroTitle="Child Education"
-      heroTagline="Empowering Children Through Education"
+      heroSlides={heroSlides}
+      heroTitle={content.heroTitle}
+      heroTagline={content.heroTagline}
       accentColor="bg-teal"
       accentText="text-teal"
-      aboutText={ABOUT_TEXT}
-      aboutImage={g11}
+      aboutText={content.aboutText.split("\n")}
+      aboutImage={aboutImage}
       aboutBadges={ABOUT_BADGES}
       activities={ACTIVITIES}
-      galleryImages={[g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12]}
+      galleryImages={galleryImages.map((img) => img.url)}
       statsRow={STATS}
-      ctaTitle="Support a Child's Education"
-      ctaBody="Together, we can create opportunities that change a child's future. Your support — big or small — makes a real difference."
-      ctaButtonLabel="Support Education"
+      ctaTitle={content.ctaTitle}
+      ctaBody={content.ctaBody}
+      ctaButtonLabel={content.ctaButtonLabel}
       ctaButtonHref="/#contact"
       ctaSideImage={heroImg3}
-      statsRow={STATS}
       socialImpact={SOCIAL_IMPACT}
       icon={GraduationCap}
     />
