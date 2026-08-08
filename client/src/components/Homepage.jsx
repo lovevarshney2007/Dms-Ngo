@@ -1369,11 +1369,11 @@ const [menuOpen, setMenuOpen] = useState(false);
           <div className="grid md:grid-cols-[280px_1fr] gap-10 md:gap-16 items-center">
             <Reveal>
               <div className="relative mx-auto md:mx-0 w-56 md:w-full">
-                <div className="rounded-full md:rounded-3xl overflow-hidden aspect-square shadow-2xl border-4 border-white">
+                <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
                   <img
                     src={presidentImg}
                     alt="President, DMS AAROHI"
-                    className="w-full h-full object-cover"
+                    className="w-full h-auto object-cover object-top"
                   />
                 </div>
                 <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-coral flex items-center justify-center shadow-lg">
