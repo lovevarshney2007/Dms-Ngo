@@ -22,13 +22,13 @@ import {
   Send,
 } from "lucide-react";
 import communityImg from "../assets/about/community-work.JPG";
-import logo from "../assets/logo.png";
+import logo from "../assets/DMS_Logoo.png";
 
 import bloodCamp1 from "../assets/hero/blood-camp-1.jpg";
 import childEducation1 from "../assets/hero/child-education-1.jpg";
 import seniorCitizen1 from "../assets/hero/senior-citizen-1.jpg";
 import clothDistribution1 from "../assets/hero/clothes-donation.jpeg";
-import presidentImg from "../assets/team/president.png";
+import presidentImg from "../assets/team/President.jpeg";
 import { useTeam, useGallery, useEvents, useHeroSlides, useInitiativeContent } from "../hooks/useSiteData";
 import { submitVolunteer } from "../lib/api";
 
@@ -876,6 +876,42 @@ export function BeAPartCTA() {
   );
 }
 
+const MARQUEE_WORDS = [
+  "Blood Donation", "Child Education", "Beti Bachao", "Cloth Distribution", "Senior Citizen Welfare", "Environment Awareness",
+  "Blood Donation", "Child Education", "Beti Bachao", "Cloth Distribution", "Senior Citizen Welfare", "Environment Awareness"
+];
+
+function NGO_Marquee() {
+  return (
+    <div className="w-full overflow-hidden pt-4 pb-3 border-y border-teal/20 bg-cream relative z-10 flex items-center">
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @keyframes scrollMarquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee-custom {
+          display: flex;
+          animation: scrollMarquee 25s linear infinite;
+        }
+      `}} />
+      <div className="absolute left-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-r from-cream to-transparent z-10" />
+      <div className="absolute right-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-l from-cream to-transparent z-10" />
+      
+      <div className="flex whitespace-nowrap opacity-100">
+        <div className="animate-marquee-custom flex gap-8 px-4">
+          {[...MARQUEE_WORDS, ...MARQUEE_WORDS].map((word, idx) => (
+            <span key={idx} className="text-teal text-[15px] font-extrabold tracking-widest uppercase flex items-center gap-8 drop-shadow-sm">
+              {word}
+              <span className="w-1.5 h-1.5 rounded-full bg-coral/60" />
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Homepage() {
 const [menuOpen, setMenuOpen] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
@@ -946,7 +982,7 @@ const [menuOpen, setMenuOpen] = useState(false);
               src={logo}
               alt="DMS Aarohi"
               className={`object-contain transition-all duration-300 ${
-                scrolled ? "h-8 md:h-10" : "h-10 md:h-12"
+                scrolled ? "h-8 md:h-10" : "h-10 md:h-12 brightness-0 invert drop-shadow-md"
               }`}
             />
           </a>
@@ -1120,8 +1156,10 @@ const [menuOpen, setMenuOpen] = useState(false);
         </div>
       </section>
 
+      <NGO_Marquee />
+
       {/* ============================ ABOUT ============================ */}
-      <section id="about" className="relative bg-cream pt-20 md:pt-28 pb-10">
+      <section id="about" className="relative bg-cream pt-12 md:pt-16 pb-10">
         <div className="max-w-7xl mx-auto px-5 md:px-8 grid md:grid-cols-2 gap-12 items-center">
           {/* Image collage */}
           <Reveal>

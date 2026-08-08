@@ -1,7 +1,7 @@
 // src/lib/api.js
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5051/api/ngo";
-const TOKEN_KEY = "admin_token"; // only the auth token lives client-side now
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/ngo";
+const TOKEN_KEY = "admin_token";
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);

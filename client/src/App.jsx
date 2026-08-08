@@ -15,7 +15,6 @@ import BetiBachao from "./components/initiatives/BetiBachao";
 import ClothDistribution from "./components/initiatives/ClothDistribution";
 import SeniorCitizen from "./components/initiatives/SeniorCitizen";
 import EnvironmentAwareness from "./components/initiatives/EnvironmentAwareness";
-import AdminPanel from "./components/AdminPanel";
 
 export default function App() {
   return (
@@ -31,9 +30,6 @@ export default function App() {
         <Route path="/initiatives/cloth-distribution" element={<ClothDistribution />} />
         <Route path="/initiatives/senior-citizen" element={<SeniorCitizen />} />
         <Route path="/initiatives/environment" element={<EnvironmentAwareness />} />
-
-        {/* Admin */}
-        <Route path="/admin" element={<AdminPanel />} />
 
         {/* 404 fallback */}
         <Route
