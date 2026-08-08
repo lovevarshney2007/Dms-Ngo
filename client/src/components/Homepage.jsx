@@ -139,6 +139,7 @@ const STATS = [
 ];
 
 const NAV_LINKS = [
+  { label: "Main Site", href: "https://dms-pqry.vercel.app" },
   { label: "Home", href: "#home" },
   { label: "About Us", href: "#about" },
   { label: "Our Initiatives", href: "#initiatives" },
