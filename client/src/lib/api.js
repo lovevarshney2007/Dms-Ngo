@@ -1,7 +1,7 @@
 // src/lib/api.js
 
 const isLocalhost = typeof window !== "undefined" && window.location.hostname === "localhost";
-const defaultUrl = isLocalhost ? "http://localhost:5051/api/ngo" : "/api/ngo";
+const defaultUrl = isLocalhost ? "http://localhost:5051/api/ngo" : "https://dms-b383.onrender.com/api/ngo";
 const BASE_URL = import.meta.env.VITE_API_URL || defaultUrl;
 const API_URL = BASE_URL.endsWith("/ngo") ? BASE_URL : `${BASE_URL}/ngo`;
 const TOKEN_KEY = "admin_token";
