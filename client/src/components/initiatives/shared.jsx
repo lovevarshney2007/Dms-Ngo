@@ -598,22 +598,50 @@ export function WaveDivider({ flip = false, color = "#FBF7F0" }) {
 }
 
 function VolunteerModal({ isOpen, onClose }) {
+  const [form, setForm] = useState({
+    name: "", phone: "", email: "", age: "", city: "",
+    occupation: "", availability: "", mode: "", heardFrom: "", interestArea: "", message: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
   useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === "Escape") onClose();
-    };
+    const handleEsc = (e) => { if (e.key === "Escape") onClose(); };
     if (isOpen) window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setSubmitted(false);
+      setError("");
+      setForm({ name: "", phone: "", email: "", age: "", city: "", occupation: "", availability: "", mode: "", heardFrom: "", interestArea: "", message: "" });
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      await submitVolunteer(form);
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const WHY_VOLUNTEER = [
     { icon: Heart, text: "Create real, lasting impact in your community" },
@@ -731,12 +759,19 @@ function VolunteerModal({ isOpen, onClose }) {
               </p>
             </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                onClose();
-              }}
-            >
+            {submitted ? (
+              <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center px-6 py-10">
+                <div className="w-16 h-16 rounded-full bg-teal/15 flex items-center justify-center mb-4">
+                  <span className="text-3xl">✅</span>
+                </div>
+                <h3 className="font-display font-bold text-2xl text-charcoal mb-2">Thank You!</h3>
+                <p className="text-charcoal/60 mb-6">Your volunteer registration has been submitted. We'll get back to you within 24–48 hours.</p>
+                <button onClick={onClose} className="px-8 py-3 rounded-full bg-coral text-cream font-semibold hover:scale-105 active:scale-95 transition-all">
+                  Close
+                </button>
+              </div>
+            ) : (
+            <form onSubmit={handleSubmit}>
               {/* Required section */}
               <div className="grid sm:grid-cols-2 gap-4 mb-4">
                 <div>
@@ -746,6 +781,8 @@ function VolunteerModal({ isOpen, onClose }) {
                   <input
                     type="text"
                     required
+                    value={form.name}
+                    onChange={set("name")}
                     placeholder="Your name"
                     className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
                   />
@@ -757,6 +794,8 @@ function VolunteerModal({ isOpen, onClose }) {
                   <input
                     type="tel"
                     required
+                    value={form.phone}
+                    onChange={set("phone")}
                     placeholder="+91 00000 00000"
                     className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
                   />
@@ -770,6 +809,8 @@ function VolunteerModal({ isOpen, onClose }) {
                   <input
                     type="number"
                     min="12"
+                    value={form.age}
+                    onChange={set("age")}
                     placeholder="Your age"
                     className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
                   />
@@ -780,6 +821,8 @@ function VolunteerModal({ isOpen, onClose }) {
                   </label>
                   <input
                     type="text"
+                    value={form.city}
+                    onChange={set("city")}
                     placeholder="Your city"
                     className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
                   />
@@ -793,6 +836,8 @@ function VolunteerModal({ isOpen, onClose }) {
                 <input
                   type="email"
                   required
+                  value={form.email}
+                  onChange={set("email")}
                   placeholder="you@example.com"
                   className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
                 />
@@ -810,6 +855,8 @@ function VolunteerModal({ isOpen, onClose }) {
                   </label>
                   <input
                     type="text"
+                    value={form.occupation}
+                    onChange={set("occupation")}
                     placeholder="Student, professional, etc."
                     className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30"
                   />
@@ -819,12 +866,11 @@ function VolunteerModal({ isOpen, onClose }) {
                     Availability
                   </label>
                   <select
-                    defaultValue=""
+                    value={form.availability}
+                    onChange={set("availability")}
                     className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25 transition-all duration-200 text-charcoal"
                   >
-                    <option value="" disabled>
-                      Select availability
-                    </option>
+                    <option value="">Select availability</option>
                     <option value="weekdays">Weekdays</option>
                     <option value="weekends">Weekends</option>
                     <option value="flexible">Flexible / Anytime</option>
@@ -838,12 +884,11 @@ function VolunteerModal({ isOpen, onClose }) {
                     Preferred Mode
                   </label>
                   <select
-                    defaultValue=""
+                    value={form.mode}
+                    onChange={set("mode")}
                     className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25 transition-all duration-200 text-charcoal"
                   >
-                    <option value="" disabled>
-                      Select mode
-                    </option>
+                    <option value="">Select mode</option>
                     <option value="onground">On-ground</option>
                     <option value="online">Remote / Online</option>
                     <option value="both">Both</option>
@@ -854,12 +899,11 @@ function VolunteerModal({ isOpen, onClose }) {
                     How did you hear about us?
                   </label>
                   <select
-                    defaultValue=""
+                    value={form.heardFrom}
+                    onChange={set("heardFrom")}
                     className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25 transition-all duration-200 text-charcoal"
                   >
-                    <option value="" disabled>
-                      Select an option
-                    </option>
+                    <option value="">Select an option</option>
                     <option value="social">Social Media</option>
                     <option value="friend">Friend / Family</option>
                     <option value="event">An Event / Camp</option>
@@ -873,12 +917,11 @@ function VolunteerModal({ isOpen, onClose }) {
                   Area of Interest
                 </label>
                 <select
-                  defaultValue=""
+                  value={form.interestArea}
+                  onChange={set("interestArea")}
                   className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25 transition-all duration-200 text-charcoal"
                 >
-                  <option value="" disabled>
-                    Select an initiative
-                  </option>
+                  <option value="">Select an initiative</option>
                   {IMPACT_AREAS.map((area) => (
                     <option key={area.title} value={area.title}>
                       {area.title}
@@ -893,22 +936,32 @@ function VolunteerModal({ isOpen, onClose }) {
                 </label>
                 <textarea
                   rows={3}
+                  value={form.message}
+                  onChange={set("message")}
                   placeholder="Tell us a bit about yourself..."
                   className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25 transition-all duration-200 text-charcoal placeholder:text-charcoal/30 resize-none"
                 />
               </div>
 
+              {error && (
+                <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
+                  {error}
+                </div>
+              )}
+
               <button
                 type="submit"
-                className="group w-full px-8 py-3.5 rounded-full bg-gradient-to-r from-gold to-coral text-cream font-bold shadow-lg shadow-gold/30 hover:shadow-xl hover:shadow-gold/40 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
+                disabled={submitting}
+                className="group w-full px-8 py-3.5 rounded-full bg-gradient-to-r from-gold to-coral text-cream font-bold shadow-lg shadow-gold/30 hover:shadow-xl hover:shadow-gold/40 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                Submit Registration
-                <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                {submitting ? "Submitting…" : "Submit Registration"}
+                {!submitting && <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
               </button>
               <p className="text-center text-xs text-charcoal/40 mt-3">
                 We'll get back to you within 24–48 hours.
               </p>
             </form>
+            )}
           </div>
         </div>
       </div>

@@ -31,7 +31,23 @@ import seniorCitizen1 from "../assets/hero/senior-citizen-1.jpg";
 import clothDistribution1 from "../assets/hero/clothes-donation.jpeg";
 import presidentImg from "../assets/team/President.jpeg";
 import { useTeam, useGallery, useEvents, useHeroSlides, useInitiativeContent } from "../hooks/useSiteData";
-import { submitVolunteer } from "../lib/api";
+import { submitVolunteer, submitBloodDonor } from "../lib/api";
+
+// Helper to submit NGO contact form
+async function submitNgoContact(data) {
+  const isLocalhost = typeof window !== "undefined" && window.location.hostname === "localhost";
+  const base = isLocalhost ? "http://localhost:5051/api" : "https://dms-b383.onrender.com/api";
+  const res = await fetch(`${base}/forms/ngo-contact`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Submission failed");
+  }
+  return res.json();
+}
 
 const PHONE = "+91 9810225442";
 const EMAIL = "dmsaarohi@gmail.com";
@@ -380,6 +396,29 @@ export function UpcomingEvents({ events = [] }) {
 
 // ─── Contact Section (Map + Form) ────────────────────────────────────────────
 function ContactSection() {
+  const [form, setForm] = useState({ name: "", phone: "", email: "", city: "", helpType: "", message: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+
+  const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      await submitNgoContact(form);
+      setSubmitted(true);
+      setForm({ name: "", phone: "", email: "", city: "", helpType: "", message: "" });
+      setTimeout(() => setSubmitted(false), 5000);
+    } catch (err) {
+      setError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="bg-cream">
       <section id="contact" className="relative py-12 md:py-8 overflow-hidden">
@@ -473,8 +512,6 @@ function ContactSection() {
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
                   />
-                  {/* Floating location badge — moved to bottom-left so it no longer
-                    sits over Google's own "View larger map" link (top-left) */}
                   <div className="absolute bottom-5 left-5 bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg px-5 py-3 flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-coral flex items-center justify-center flex-shrink-0">
                       <MapPin className="w-4 h-4 text-cream" />
@@ -494,7 +531,7 @@ function ContactSection() {
               {/* Contact form */}
               <Reveal delay={150} className="h-full">
                 <form
-                  onSubmit={(e) => e.preventDefault()}
+                  onSubmit={handleSubmit}
                   className="h-full bg-white rounded-3xl shadow-2xl p-4 md:p-5 flex flex-col"
                 >
                   <h3 className="font-display font-bold text-xl text-charcoal mb-1">
@@ -504,24 +541,74 @@ function ContactSection() {
                     We usually respond within 24–48 hours.
                   </p>
 
+                  {/* Success state */}
+                  {submitted && (
+                    <div className="mb-4 px-4 py-3 rounded-xl bg-teal/10 border border-teal/30 text-teal text-sm font-medium flex items-center gap-2">
+                      <span className="text-lg">✅</span>
+                      Message sent! We'll get back to you soon.
+                    </div>
+                  )}
+
+                  {/* Error state */}
+                  {error && (
+                    <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
+                      {error}
+                    </div>
+                  )}
+
                   <div className="grid sm:grid-cols-2 gap-3 mb-3">
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/50 mb-1.5">
-                        Full Name
+                        Full Name *
                       </label>
                       <input
                         type="text"
+                        required
+                        value={form.name}
+                        onChange={set("name")}
                         placeholder="Your name"
                         className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/20 transition-all duration-200 text-charcoal placeholder:text-charcoal/35"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/50 mb-1.5">
-                        Phone Number
+                        Phone Number *
                       </label>
                       <input
                         type="tel"
+                        required
+                        value={form.phone}
+                        onChange={set("phone")}
                         placeholder="+91 00000 00000"
+                        className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/20 transition-all duration-200 text-charcoal placeholder:text-charcoal/35"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/50 mb-1.5">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={form.email}
+                        onChange={set("email")}
+                        placeholder="you@example.com"
+                        className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/20 transition-all duration-200 text-charcoal placeholder:text-charcoal/35"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/50 mb-1.5">
+                        City *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={form.city}
+                        onChange={set("city")}
+                        placeholder="Your city"
                         className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/20 transition-all duration-200 text-charcoal placeholder:text-charcoal/35"
                       />
                     </div>
@@ -529,32 +616,44 @@ function ContactSection() {
 
                   <div className="mb-3">
                     <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/50 mb-1.5">
-                      Email Address
+                      How can we help? *
                     </label>
-                    <input
-                      type="email"
-                      placeholder="you@example.com"
-                      className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/20 transition-all duration-200 text-charcoal placeholder:text-charcoal/35"
-                    />
+                    <select
+                      required
+                      value={form.helpType}
+                      onChange={set("helpType")}
+                      className="w-full px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/20 transition-all duration-200 text-charcoal"
+                    >
+                      <option value="">Select an option</option>
+                      <option value="Volunteer">I want to Volunteer</option>
+                      <option value="Donate">I want to Donate</option>
+                      <option value="Partner">Partnership / Collaboration</option>
+                      <option value="General Query">General Query</option>
+                      <option value="Other">Other</option>
+                    </select>
                   </div>
 
-                  <div className="mb-4">
+                  <div className="mb-4 flex-1">
                     <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/50 mb-1.5">
-                      Message
+                      Message *
                     </label>
                     <textarea
-                      rows={4}
+                      rows={3}
+                      required
+                      value={form.message}
+                      onChange={set("message")}
                       placeholder="Tell us how you'd like to get involved..."
-                      className="w-full min-h-[100px] px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/20 transition-all duration-200 text-charcoal placeholder:text-charcoal/35 resize-none"
+                      className="w-full min-h-[80px] px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/20 transition-all duration-200 text-charcoal placeholder:text-charcoal/35 resize-none"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="group w-full sm:w-auto self-start px-8 py-3 rounded-full bg-coral text-cream font-semibold shadow-lg shadow-coral/30 hover:bg-coral-dark hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
+                    disabled={submitting}
+                    className="group w-full sm:w-auto self-start px-8 py-3 rounded-full bg-coral text-cream font-semibold shadow-lg shadow-coral/30 hover:bg-coral-dark hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
-                    Send Message
-                    <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    {submitting ? "Sending…" : "Send Message"}
+                    {!submitting && <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
                   </button>
                 </form>
               </Reveal>
