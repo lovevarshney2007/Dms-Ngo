@@ -1,6 +1,7 @@
 // src/lib/api.js
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/ngo";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/ngo";
+const API_URL = BASE_URL.endsWith("/ngo") ? BASE_URL : `${BASE_URL}/ngo`;
 const TOKEN_KEY = "admin_token";
 
 export function getToken() {

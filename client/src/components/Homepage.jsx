@@ -138,8 +138,10 @@ const STATS = [
   { value: 1000, suffix: "+", label: "Lives Positively Impacted" },
 ];
 
+const MAIN_SITE_URL = typeof window !== "undefined" && window.location.hostname === "localhost" ? "http://localhost:5176" : "https://dms-pqry.vercel.app";
+
 const NAV_LINKS = [
-  { label: "Main Site", href: "https://dms-pqry.vercel.app" },
+  { label: "Main Site", href: MAIN_SITE_URL },
   { label: "Home", href: "#home" },
   { label: "About Us", href: "#about" },
   { label: "Our Initiatives", href: "#initiatives" },
@@ -535,14 +537,14 @@ function ContactSection() {
                     />
                   </div>
 
-                  <div className="mb-4 flex-1">
+                  <div className="mb-4">
                     <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal/50 mb-1.5">
                       Message
                     </label>
                     <textarea
-                      rows={3}
+                      rows={4}
                       placeholder="Tell us how you'd like to get involved..."
-                      className="w-full h-full min-h-[80px] px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/20 transition-all duration-200 text-charcoal placeholder:text-charcoal/35 resize-none"
+                      className="w-full min-h-[100px] px-4 py-2.5 rounded-xl border border-charcoal/10 bg-cream/40 focus:bg-white focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral/20 transition-all duration-200 text-charcoal placeholder:text-charcoal/35 resize-none"
                     />
                   </div>
 
@@ -1393,14 +1395,7 @@ const [menuOpen, setMenuOpen] = useState(false);
                 need it the most and building a compassionate, inclusive
                 community."
               </blockquote>
-              <p className="text-charcoal/70 leading-relaxed mb-6">
-                Through our initiatives in education, health awareness and
-                social support, we strive to bring hope, dignity and opportunity
-                to underserved sections of society. Every small effort is a step
-                toward a brighter, more equitable future — and together with our
-                volunteers, partners and well-wishers, we remain committed to
-                making a lasting difference.
-              </p>
+
               <div>
                 <p className="font-display font-bold text-lg text-teal">
                   — Pankaj Mathur
