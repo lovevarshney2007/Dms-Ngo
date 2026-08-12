@@ -9,7 +9,13 @@ export function useTeam() {
   const refetch = useCallback(() => {
     setLoading(true);
     getTeam()
-      .then(setTeam)
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          setTeam(data.map(member => ({ ...member, image: formatImageUrl(member.image) })));
+        } else {
+          setTeam([]);
+        }
+      })
       .catch(() => setTeam([]))
       .finally(() => setLoading(false));
   }, []);
@@ -47,7 +53,13 @@ export function useHeroSlides(initiative) {
   const refetch = useCallback(() => {
     setLoading(true);
     getHeroSlides(initiative)
-      .then(setSlides)
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          setSlides(data.map(slide => ({ ...slide, image: formatImageUrl(slide.image) })));
+        } else {
+          setSlides([]);
+        }
+      })
       .catch(() => setSlides([]))
       .finally(() => setLoading(false));
   }, [initiative]);
@@ -63,7 +75,13 @@ export function useEvents() {
   const refetch = useCallback(() => {
     setLoading(true);
     getEvents()
-      .then(setEvents)
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          setEvents(data.map(event => ({ ...event, image: formatImageUrl(event.image) })));
+        } else {
+          setEvents([]);
+        }
+      })
       .catch(() => setEvents([]))
       .finally(() => setLoading(false));
   }, []);
@@ -84,7 +102,14 @@ export function useInitiativeContent(slug, defaults) {
   useEffect(() => {
     setLoading(true);
     getContent(slug)
-      .then((data) => setContent(data || defaults))
+      .then((data) => {
+        if (data) {
+          if (data.aboutImage) data.aboutImage = formatImageUrl(data.aboutImage);
+          setContent(data);
+        } else {
+          setContent(defaults);
+        }
+      })
       .catch(() => setContent(defaults))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
