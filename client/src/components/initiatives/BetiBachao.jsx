@@ -5,8 +5,9 @@
 
 import { ShieldCheck, Heart, Users, Megaphone, GraduationCap, Sparkles, Handshake } from "lucide-react";
 import { InitiativePage } from "./shared";
-import { useGallery, useInitiativeContent } from "../../hooks/useSiteData";
-import { useHeroSlides } from "../../hooks/useSiteData";
+import { useGallery, useInitiativeContent, useHeroSlides } from "../../hooks/useSiteData";
+import { useState } from "react";
+import { VolunteerModal } from "../Homepage";
 
 import heroImg1 from "../../assets/beti-bachao/beti-2.jpg";
 import heroImg2 from "../../assets/beti-bachao/beti-15.jpg";
@@ -121,6 +122,7 @@ const SOCIAL_IMPACT = {
 };
 
 export default function BetiBachao() {
+  const [volunteerModalOpen, setVolunteerModalOpen] = useState(false);
   const { images: galleryImages } = useGallery(SLUG);
   const { content } = useInitiativeContent(SLUG, DEFAULT_CONTENT);
   const { slides: fetchedSlides } = useHeroSlides(SLUG);
@@ -133,6 +135,7 @@ export default function BetiBachao() {
   const aboutImage = content.aboutImage || DEFAULT_ABOUT_IMAGE;
 
   return (
+    <>
     <InitiativePage
       heroSlides={heroSlides}
       heroTitle={content.heroTitle}
@@ -148,10 +151,13 @@ export default function BetiBachao() {
       ctaTitle={content.ctaTitle}
       ctaBody={content.ctaBody}
       ctaButtonLabel={content.ctaButtonLabel}
-      ctaButtonHref="/#contact"
+      ctaButtonHref={undefined}
       ctaSideImage={heroImg3}
       socialImpact={SOCIAL_IMPACT}
       icon={GraduationCap}
+      onCtaClick={() => setVolunteerModalOpen(true)}
     />
+    <VolunteerModal isOpen={volunteerModalOpen} onClose={() => setVolunteerModalOpen(false)} />
+    </>
   );
 }

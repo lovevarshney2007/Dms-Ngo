@@ -5,8 +5,9 @@
 
 import { Shirt, Heart, Users, Snowflake, HandHeart, Package, ShoppingBag } from "lucide-react";
 import { InitiativePage } from "./shared";
-import { useGallery, useInitiativeContent } from "../../hooks/useSiteData";
-import { useHeroSlides } from "../../hooks/useSiteData";
+import { useGallery, useInitiativeContent, useHeroSlides } from "../../hooks/useSiteData";
+import { useState } from "react";
+import { VolunteerModal } from "../Homepage";
 
 import heroImg1 from "../../assets/hero/clothes-donation.jpeg";
 import heroImg2 from "../../assets/cloth-donation/cloth-2.jpg";
@@ -121,6 +122,7 @@ const SOCIAL_IMPACT = {
 };
 
 export default function ClothDistribution() {
+  const [volunteerModalOpen, setVolunteerModalOpen] = useState(false);
   const { images: galleryImages } = useGallery(SLUG);
   const { content } = useInitiativeContent(SLUG, DEFAULT_CONTENT);
   const { slides: fetchedSlides } = useHeroSlides(SLUG);
@@ -133,12 +135,13 @@ export default function ClothDistribution() {
   const aboutImage = content.aboutImage || DEFAULT_ABOUT_IMAGE;
 
   return (
+    <>
     <InitiativePage
       heroSlides={heroSlides}
       heroTitle={content.heroTitle}
       heroTagline={content.heroTagline}
       accentColor="bg-coral"
-      accentText="text-coral"
+      accentText="text-amber-700"
       aboutText={content.aboutText.split("\n")}
       aboutImage={aboutImage}
       aboutBadges={ABOUT_BADGES}
@@ -148,10 +151,13 @@ export default function ClothDistribution() {
       ctaTitle={content.ctaTitle}
       ctaBody={content.ctaBody}
       ctaButtonLabel={content.ctaButtonLabel}
-      ctaButtonHref="/#contact"
+      ctaButtonHref={undefined}
       ctaSideImage={heroImg1}
       socialImpact={SOCIAL_IMPACT}
       icon={Shirt}
+      onCtaClick={() => setVolunteerModalOpen(true)}
     />
+    <VolunteerModal isOpen={volunteerModalOpen} onClose={() => setVolunteerModalOpen(false)} />
+    </>
   );
 }

@@ -5,8 +5,9 @@
 
 import { Users, Heart, ShieldCheck, Stethoscope, HandHeart, Megaphone, Home } from "lucide-react";
 import { InitiativePage } from "./shared";
-import { useGallery, useInitiativeContent } from "../../hooks/useSiteData";
-import { useHeroSlides } from "../../hooks/useSiteData";
+import { useGallery, useInitiativeContent, useHeroSlides } from "../../hooks/useSiteData";
+import { useState } from "react";
+import { VolunteerModal } from "../Homepage";
 
 import heroImg1 from "../../assets/senior-citizen/senior-9.jpg";
 import heroImg2 from "../../assets/senior-citizen/senior-4.jpg";
@@ -121,6 +122,7 @@ const SOCIAL_IMPACT = {
 };
 
 export default function SeniorCitizen() {
+  const [volunteerModalOpen, setVolunteerModalOpen] = useState(false);
   const { images: galleryImages } = useGallery(SLUG);
   const { content } = useInitiativeContent(SLUG, DEFAULT_CONTENT);
   const { slides: fetchedSlides } = useHeroSlides(SLUG);
@@ -133,6 +135,7 @@ export default function SeniorCitizen() {
   const aboutImage = content.aboutImage || DEFAULT_ABOUT_IMAGE;
 
   return (
+    <>
     <InitiativePage
       heroSlides={heroSlides}
       heroTitle={content.heroTitle}
@@ -148,10 +151,13 @@ export default function SeniorCitizen() {
       ctaTitle={content.ctaTitle}
       ctaBody={content.ctaBody}
       ctaButtonLabel={content.ctaButtonLabel}
-      ctaButtonHref="/#contact"
+      ctaButtonHref={undefined}
       ctaSideImage={heroImg2}
       socialImpact={SOCIAL_IMPACT}
       icon={Users}
+      onCtaClick={() => setVolunteerModalOpen(true)}
     />
+    <VolunteerModal isOpen={volunteerModalOpen} onClose={() => setVolunteerModalOpen(false)} />
+    </>
   );
 }
