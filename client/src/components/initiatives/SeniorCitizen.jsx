@@ -52,7 +52,7 @@ const DEFAULT_HERO_SLIDES = [
   },
 ];
  
-const DEFAULT_ABOUT_IMAGE = aboutImg;
+const DEFAULT_ABOUT_IMAGE = heroImg1;
 
 const ABOUT_BADGES = [
   { icon: Heart, label: "Health Check-up Camps", sub: "Free medical & wellness" },

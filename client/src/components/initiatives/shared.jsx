@@ -57,7 +57,10 @@ export const CONTACT = {
   address: "Paschim Vihar, Delhi",
 };
 
+const MAIN_SITE_URL = typeof window !== "undefined" && window.location.hostname === "localhost" ? "http://localhost:5176" : "https://dms-pqry.vercel.app";
+
 export const NAV_LINKS = [
+  { label: "Main Site", href: MAIN_SITE_URL },
   { label: "Home", href: "/" },
   { label: "About Us", href: "/#about" },
   { label: "Our Initiatives", href: "/#initiatives" },
@@ -1612,7 +1615,7 @@ export function InitiativePage({
               </p>
               <div className="flex flex-wrap gap-4">
                 <a
-                  href={ctaButtonHref}
+                  href={ctaButtonHref || "#"}
                   onClick={(e) => {
                     if (onCtaClick) {
                       e.preventDefault();
