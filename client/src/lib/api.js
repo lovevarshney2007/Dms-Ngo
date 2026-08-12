@@ -6,6 +6,10 @@ const BASE_URL = import.meta.env.VITE_API_URL || defaultUrl;
 const API_URL = BASE_URL.endsWith("/ngo") ? BASE_URL : `${BASE_URL}/ngo`;
 const TOKEN_KEY = "admin_token";
 
+if (!isLocalhost && BASE_URL.includes("localhost")) {
+  console.warn("WARNING: The frontend is running in production (Vercel), but VITE_API_URL is pointing to localhost. API calls and image loading will fail. Please set VITE_API_URL to your deployed backend URL in Vercel settings.");
+}
+
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -17,6 +21,15 @@ export function clearToken() {
 }
 export function isLoggedIn() {
   return !!getToken();
+}
+
+export function formatImageUrl(url) {
+  if (!url) return url;
+  if (!isLocalhost && url.startsWith("http://localhost:5051")) {
+    const base = BASE_URL.replace(/\/api\/ngo$/, "").replace(/\/api$/, "");
+    return url.replace("http://localhost:5051", base);
+  }
+  return url;
 }
 
 async function request(path, { method = "GET", body, auth = false, isForm = false } = {}) {

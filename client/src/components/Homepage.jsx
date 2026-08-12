@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import communityImg from "../assets/about/community-work.JPG";
 import logo from "../assets/DMS_Logoo.png";
+import footerLogo from "../assets/DMS_Logo1.png";
 
 import bloodCamp1 from "../assets/hero/blood-camp-1.jpg";
 import childEducation1 from "../assets/hero/child-education-1.jpg";
@@ -34,7 +35,7 @@ import { submitVolunteer } from "../lib/api";
 
 const PHONE = "+91 9810225442";
 const EMAIL = "dmsaarohi@gmail.com";
-const ADDRESS = "A5, 272, Paschim Vihar, New Delhi";
+const ADDRESS = "Paschim Vihar, Delhi";
 
 const SOCIAL_LINKS = {
   facebook: "https://facebook.com/dmsaarohi",
@@ -565,7 +566,7 @@ function ContactSection() {
   );
 }
 
-function VolunteerModal({ isOpen, onClose }) {
+export function VolunteerModal({ isOpen, onClose }) {
   const [form, setForm] = useState({
     name: "", phone: "", email: "", age: "", city: "", occupation: "",
     availability: "", mode: "", heardFrom: "", interestArea: "", message: "",
@@ -1517,15 +1518,15 @@ const [menuOpen, setMenuOpen] = useState(false);
 
       {/* ============================ FOOTER ============================ */}
       <footer className="bg-charcoal text-cream pt-16 pb-8">
-        <div className="max-w-7xl mx-auto px-5 md:px-8 grid md:grid-cols-4 gap-10 mb-12">
+        <div className="max-w-7xl mx-auto px-5 md:px-8 flex flex-col md:flex-row flex-wrap lg:flex-nowrap justify-between gap-10 lg:gap-6 mb-12">
           {/* Brand */}
-          <div className="md:col-span-1">
+          <div className="w-full lg:max-w-xs">
             <div className="flex items-center gap-2 mb-4">
               <a href="#home" className="z-50 flex items-center">
                 <img
-                  src={logo}
+                  src={footerLogo}
                   alt="DMS Aarohi"
-                  className="object-contain transition-all duration-300 h-10 md:h-12"
+                  className="object-contain transition-all duration-300 h-14 md:h-16 brightness-0 invert"
                 />
               </a>
             </div>
@@ -1563,7 +1564,7 @@ const [menuOpen, setMenuOpen] = useState(false);
               {IMPACT_AREAS.map((area) => (
                 <li key={area.title}>
                   <a
-                    href="#initiatives"
+                    href={area.href}
                     className="hover:text-coral transition-colors"
                   >
                     {area.title}

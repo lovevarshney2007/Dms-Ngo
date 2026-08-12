@@ -1,6 +1,6 @@
 // src/hooks/useSiteData.js
 import { useState, useEffect, useCallback } from "react";
-import { getTeam, getGallery, getEvents, getContent, getHeroSlides } from "../lib/api";
+import { getTeam, getGallery, getEvents, getContent, getHeroSlides, formatImageUrl } from "../lib/api";
 
 export function useTeam() {
   const [team, setTeam] = useState([]);
@@ -25,7 +25,13 @@ export function useGallery(initiative) {
   const refetch = useCallback(() => {
     setLoading(true);
     getGallery(initiative)
-      .then(setImages)
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          setImages(data.map(img => ({ ...img, url: formatImageUrl(img.url) })));
+        } else {
+          setImages([]);
+        }
+      })
       .catch(() => setImages([]))
       .finally(() => setLoading(false));
   }, [initiative]);

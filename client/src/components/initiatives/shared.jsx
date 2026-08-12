@@ -39,6 +39,7 @@ import {
   StethoscopeIcon,
 } from "lucide-react";
 import logo from "../../assets/logo.png";
+import footerLogo from "../../assets/DMS_Logo1.png";
 import { submitBloodDonor } from "../../lib/api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -53,7 +54,7 @@ export const SOCIAL_LINKS = {
 export const CONTACT = {
   phone: "+91 9810225442",
   email: "dmsaarohi@gmail.com",
-  address: "A5, 272, Paschim Vihar, New Delhi, India",
+  address: "Paschim Vihar, Delhi",
 };
 
 export const NAV_LINKS = [
@@ -1089,10 +1090,10 @@ export function SocialImpact({
 export function Footer() {
   return (
     <footer className="bg-charcoal text-cream pt-16 pb-8">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 grid md:grid-cols-4 gap-10 mb-12">
-        <div className="md:col-span-1">
+      <div className="max-w-7xl mx-auto px-5 md:px-8 flex flex-col md:flex-row flex-wrap lg:flex-nowrap justify-between gap-10 lg:gap-6 mb-12">
+        <div className="w-full lg:max-w-xs">
           <div className="mb-4">
-            <img src={logo} alt="DMS AAROHI" className="h-10 object-contain" />
+            <img src={footerLogo} alt="DMS AAROHI" className="h-14 md:h-16 object-contain brightness-0 invert" />
           </div>
           <p className="text-cream/60 text-sm leading-relaxed mb-5">
             A registered non-profit society working since 2013 for blood
