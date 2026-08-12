@@ -8,6 +8,7 @@
  */
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ScrollToTop from "./components/ScrollToTop";
 import Homepage from "./components/Homepage";
 import BloodDonation from "./components/initiatives/BloodDonation";
 import ChildEducation from "./components/initiatives/ChildEducation";
@@ -19,6 +20,7 @@ import EnvironmentAwareness from "./components/initiatives/EnvironmentAwareness"
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         {/* Homepage */}
         <Route path="/" element={<Homepage />} />
