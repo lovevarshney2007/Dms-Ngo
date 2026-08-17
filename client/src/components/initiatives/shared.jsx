@@ -38,7 +38,7 @@ import {
   ShieldCheckIcon,
   StethoscopeIcon,
 } from "lucide-react";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/DMS_Logoo.png";
 import footerLogo from "../../assets/DMS_Logo1.png";
 import { submitBloodDonor } from "../../lib/api";
 
@@ -995,7 +995,7 @@ export function Navbar({ onVolunteerOpen }) {
             src={logo}
             alt="DMS AAROHI"
             className={`object-contain transition-all duration-300 ${
-              scrolled ? "h-8 md:h-10" : "h-10 md:h-12"
+              scrolled ? "h-8 md:h-10" : "h-10 md:h-12 brightness-0 invert drop-shadow-md"
             }`}
           />
         </a>
