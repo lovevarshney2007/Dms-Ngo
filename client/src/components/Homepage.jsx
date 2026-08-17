@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import communityImg from "../assets/about/community-work.JPG";
 import logo from "../assets/DMS_Logoo.png";
-import footerLogo from "../assets/DMS_Logo1.png";
+
 
 import bloodCamp1 from "../assets/hero/blood-camp-1.jpg";
 import childEducation1 from "../assets/hero/child-education-1.jpg";
@@ -1623,7 +1623,7 @@ const [menuOpen, setMenuOpen] = useState(false);
             <div className="flex items-center gap-2 mb-4">
               <a href="#home" className="z-50 flex items-center">
                 <img
-                  src={footerLogo}
+                  src={logo}
                   alt="DMS Aarohi"
                   className="object-contain transition-all duration-300 h-14 md:h-16 brightness-0 invert"
                 />

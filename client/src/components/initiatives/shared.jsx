@@ -39,7 +39,7 @@ import {
   StethoscopeIcon,
 } from "lucide-react";
 import logo from "../../assets/DMS_Logoo.png";
-import footerLogo from "../../assets/DMS_Logo1.png";
+
 import { submitBloodDonor } from "../../lib/api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -1149,7 +1149,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-5 md:px-8 flex flex-col md:flex-row flex-wrap lg:flex-nowrap justify-between gap-10 lg:gap-6 mb-12">
         <div className="w-full lg:max-w-xs">
           <div className="mb-4">
-            <img src={footerLogo} alt="DMS AAROHI" className="h-14 md:h-16 object-contain brightness-0 invert" />
+            <img src={logo} alt="DMS AAROHI" className="h-14 md:h-16 object-contain brightness-0 invert" />
           </div>
           <p className="text-cream/60 text-sm leading-relaxed mb-5">
             A registered non-profit society working since 2013 for blood
